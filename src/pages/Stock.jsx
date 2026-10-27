@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api.js";
+import { BuyStock } from "./Pix.jsx";
 import { Empty, Field, LoadError, Modal, Pager, Table, fmtDate, fmtDateTime, fmtMoney, useAction, useLoad, useUi } from "../ui.jsx";
 
 export const monthsLabel = (m) => `${m} ${m === 1 ? "mês" : "meses"}`;
@@ -59,6 +60,7 @@ export function StockPortal() {
       <div className="actions left" style={{ marginTop: 12 }}>
         <button className="btn" disabled={!data.balances.length} onClick={() => setTransfer(true)}>Transferir para outro revendedor</button>
       </div>
+      <BuyStock onPaid={changed} />
       <h4>Extrato</h4>
       <Ledger ledger={data.ledger} onPage={setPage} />
       {transfer && <TransferModal balances={data.balances} onClose={() => setTransfer(false)} onDone={() => { setTransfer(false); changed(); }} />}

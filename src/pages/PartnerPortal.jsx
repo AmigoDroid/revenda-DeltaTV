@@ -5,6 +5,7 @@ import MacDevice from "./MacDevice.jsx";
 import Providers from "./Providers.jsx";
 import TransferLicense from "./TransferLicense.jsx";
 import { StockPortal } from "./Stock.jsx";
+import { PayInvoiceButton, PixHistory } from "./Pix.jsx";
 import { Badge, Empty, Pager, Table, fmtDate, fmtDateTime, fmtMoney, useAction, useDebounced, useList, useUi } from "../ui.jsx";
 
 // Portal do parceiro: o backend restringe tudo ao parceiro do token (nunca confie neste front).
@@ -23,7 +24,19 @@ export default function PartnerPortal() {
   const [transfer, setTransfer] = useState(null); // ativação cuja licença vai para outro MAC
   const loadCodes = () => api("/partner/codes").then((r) => setCodes(r.data));
   const loadProviders = () => api("/partner/providers").then((r) => setProviders(r.data));
-  useEffect(() => { api("/partner/me").then(setMe); loadProviders(); loadCodes(); }, []);
+  const loadMe = () => api("/partner/me").then(setMe);
+  useEffect(() => { loadMe(); loadProviders(); loadCodes(); }, []);
+  // Pix pago: a fatura quitada pode reativar a parceria (suspensa por atraso) e o saldo do estoque pode ter mudado.
+  const [pixTick, setPixTick] = useState(0);
+  const paid = () => { invoices.reload(); loadMe(); loadCodes(); setPixTick((n) => n + 1); window.dispatchEvent(new Event("stock-changed")); };
+  const invoicesTable = (
+    <>
+      <h3 style={{ marginTop: 20 }}>Mensalidades</h3>
+      <Table><thead><tr><th>Competência</th><th>Valor</th><th>Pago</th><th>Vencimento</th><th>Status</th><th /></tr></thead><tbody>{invoices.data.map((i) => <tr key={i.id}><td>{i.competence}</td><td>{fmtMoney(i.amountCents)}</td><td>{fmtMoney(i.paidCents)}</td><td>{fmtDate(i.dueDate)}</td><td><Badge status={i.status} /></td><td className="actions"><PayInvoiceButton invoice={i} onPaid={paid} /></td></tr>)}</tbody></Table>
+      <Empty loading={invoices.loading} error={invoices.error} count={invoices.data.length} /><Pager meta={invoices.meta} onPage={invoices.setPage} />
+      <PixHistory refreshKey={pixTick} />
+    </>
+  );
   // O saldo do estoque aparece na tabela de códigos: recarrega quando o estoque muda (transferência, aplicação).
   useEffect(() => { window.addEventListener("stock-changed", loadCodes); return () => window.removeEventListener("stock-changed", loadCodes); }, []);
   const isReseller = me?.kind === "reseller" || me?.kind === "both";
@@ -43,8 +56,9 @@ export default function PartnerPortal() {
         <div className="card" style={{ padding: 16 }}>
           {me.pendingApproval
             ? <><h3 style={{ marginTop: 0 }}>Cadastro em análise</h3><p>Recebemos o seu cadastro. Assim que a plataforma aprovar, o seu portal será liberado. Não é preciso fazer mais nada.</p></>
-            : <><h3 style={{ marginTop: 0 }}>Conta indisponível</h3><p>Seu acesso está {me.effectiveStatus === "expired" ? "com a vigência encerrada" : "suspenso ou bloqueado"}{me.statusReason ? `: ${me.statusReason}` : "."}</p><p className="muted">Fale com a plataforma para regularizar.</p></>}
+            : <><h3 style={{ marginTop: 0 }}>Conta indisponível</h3><p>Seu acesso está {me.effectiveStatus === "expired" ? "com a vigência encerrada" : "suspenso ou bloqueado"}{me.statusReason ? `: ${me.statusReason}` : "."}</p><p className="muted">Fale com a plataforma para regularizar{me.effectiveStatus === "suspended" ? " ou pague a mensalidade em aberto abaixo (a liberação é automática após a confirmação do Pix)" : ""}.</p></>}
         </div>
+        {me.effectiveStatus === "suspended" && !me.pendingApproval && invoicesTable}
       </>
     );
   }
@@ -89,8 +103,7 @@ export default function PartnerPortal() {
           {a.status !== "revoked" && !live && <button className="btn sm danger" onClick={() => change(a, "revoke", { title: "Remover ativação", message: a.mac, danger: true })}>Remover</button>}
           {a.status !== "revoked" && live && <span className="muted" title="Com licença em andamento, use Transferir MAC: remover perderia o tempo restante."> licença em uso</span>}</td></tr>);})}</tbody></Table>
       <Empty loading={devices.loading} error={devices.error} count={devices.data.length} /><Pager meta={devices.meta} onPage={devices.setPage} />
-      <h3 style={{ marginTop: 20 }}>Mensalidades</h3>
-      <Table><thead><tr><th>Competência</th><th>Valor</th><th>Pago</th><th>Vencimento</th><th>Status</th></tr></thead><tbody>{invoices.data.map((i) => <tr key={i.id}><td>{i.competence}</td><td>{fmtMoney(i.amountCents)}</td><td>{fmtMoney(i.paidCents)}</td><td>{fmtDate(i.dueDate)}</td><td><Badge status={i.status} /></td></tr>)}</tbody></Table>
+      {invoicesTable}
       {newCode && <CodeModal checkPath="/partner/codes/check" createPath="/partner/codes" kind={me?.kind} providers={providers} onClose={() => setNewCode(false)} onCreated={() => { setNewCode(false); loadCodes(); }} />}
       {editCode && <CodeEditModal code={editCode} kind={me?.kind} providers={providers} onClose={() => setEditCode(null)} onSaved={() => { setEditCode(null); loadCodes(); }} />}
       {transfer && <TransferLicense activation={transfer} onClose={() => setTransfer(null)} onDone={() => { setTransfer(null); devices.reload(); window.dispatchEvent(new Event("stock-changed")); }} />}
