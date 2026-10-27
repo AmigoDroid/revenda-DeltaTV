@@ -5,12 +5,12 @@ import { Field, PasswordInput, useAction } from "../ui.jsx";
 /** Tela pública de cadastro de revendedor. O cadastro fica aguardando aprovação da plataforma. */
 export default function Register({ onBack }) {
   const run = useAction();
-  const [f, setF] = useState({ name: "", contactName: "", email: "", phone: "", password: "", confirm: "", website: "" });
+  const [f, setF] = useState({ contactName: "", email: "", phone: "", password: "", confirm: "", website: "" });
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
   const mismatch = f.confirm !== "" && f.password !== f.confirm;
-  const valid = f.name.trim().length >= 2 && f.contactName.trim().length >= 2 && f.email.includes("@") && f.phone.trim().length >= 8 && f.password.length >= 12 && f.password === f.confirm;
+  const valid = f.contactName.trim().length >= 2 && f.email.includes("@") && f.phone.trim().length >= 8 && f.password.length >= 12 && f.password === f.confirm;
 
   const submit = async (e) => {
     e.preventDefault();
@@ -36,8 +36,7 @@ export default function Register({ onBack }) {
     <div className="login card">
       <h2 style={{ marginBottom: 16 }}>Cadastro de revendedor</h2>
       <form onSubmit={submit}>
-        <Field label="Nome da empresa ou do revendedor"><input value={f.name} onChange={set("name")} maxLength={160} required /></Field>
-        <Field label="Nome do responsável"><input value={f.contactName} onChange={set("contactName")} maxLength={160} autoComplete="name" required /></Field>
+        <Field label="Seu nome" hint="Nome completo, como você é conhecido pelos seus clientes."><input value={f.contactName} onChange={set("contactName")} maxLength={160} autoComplete="name" required /></Field>
         <Field label="E-mail" hint="Será o seu login."><input type="email" value={f.email} onChange={set("email")} maxLength={200} autoComplete="username" required /></Field>
         <Field label="Telefone / WhatsApp"><input type="tel" value={f.phone} onChange={set("phone")} maxLength={40} autoComplete="tel" required /></Field>
         <Field label="Senha" hint="Mínimo de 12 caracteres."><PasswordInput value={f.password} onChange={set("password")} autoComplete="new-password" required /></Field>
