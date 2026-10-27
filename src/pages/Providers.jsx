@@ -19,7 +19,6 @@ export default function Providers({ providers, codes, onChanged }) {
 
   return (
     <section>
-      <h3>Meus servidores IPTV</h3>
       <p className="muted">Cadastre o painel do seu provedor. Depois crie um código de ativação apontando para ele.</p>
       <div className="actions left"><button className="btn primary" onClick={() => setForm({})}>Novo servidor</button></div>
       <Table>

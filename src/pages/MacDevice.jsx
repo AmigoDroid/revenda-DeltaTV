@@ -67,7 +67,7 @@ export default function MacDevice() {
 
   return (
     <section>
-      <h3>Dispositivo por MAC</h3>
+      <div className="section-head"><h3>Buscar TV por MAC</h3></div>
       <p className="muted">Cole o MAC copiado do QR Code da TV. Toda alteração fica registrada com o seu nome e o do seu revendedor.</p>
       <form className="toolbar" onSubmit={(e) => { e.preventDefault(); search(); }}>
         <input placeholder="AA:BB:CC:DD:EE:FF" value={macInput} onChange={(e) => setMacInput(e.target.value)} autoComplete="off" spellCheck={false} />

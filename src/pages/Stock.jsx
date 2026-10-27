@@ -54,14 +54,12 @@ export function StockPortal() {
   if (!data) return error ? <LoadError error={error} onRetry={reload} /> : <p className="muted">Carregando…</p>;
   return (
     <section>
-      <h3>Meu estoque de licenças</h3>
-      <p className="muted">Aplique uma licença ao MAC de um cliente (na busca por MAC abaixo) ou transfira para outro revendedor pelo e-mail dele.</p>
       <Balances balances={data.balances} />
       <div className="actions left" style={{ marginTop: 12 }}>
         <button className="btn" disabled={!data.balances.length} onClick={() => setTransfer(true)}>Transferir para outro revendedor</button>
       </div>
       <BuyStock onPaid={changed} />
-      <h4>Extrato</h4>
+      <div className="section-head"><h3>Extrato</h3></div>
       <Ledger ledger={data.ledger} onPage={setPage} />
       {transfer && <TransferModal balances={data.balances} onClose={() => setTransfer(false)} onDone={() => { setTransfer(false); changed(); }} />}
     </section>

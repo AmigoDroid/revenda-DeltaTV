@@ -21,7 +21,7 @@ function addMonth(ymd) {
 }
 const nextDue = (due) => addMonth(due && due >= today() ? due : today()); // vencido: conta a partir de hoje
 
-const whatsapp = (phone) => {
+export const whatsapp = (phone) => {
   const digits = String(phone || "").replace(/\D/g, "");
   if (digits.length < 10) return null;
   return `https://wa.me/${digits.length <= 11 ? `55${digits}` : digits}`;
@@ -75,11 +75,7 @@ export default function Clients() {
   const s = summary.data;
   return (
     <section>
-      <div className="page-head" style={{ marginTop: 20 }}>
-        <h3 style={{ margin: 0 }}>Meus clientes</h3>
-        <div className="actions"><button className="btn primary" onClick={() => setEdit({ mac: "", isNew: true })}>Adicionar cliente</button></div>
-      </div>
-      <p className="muted">Todas as suas TVs com nome, contato, valor e vencimento. Você pode cadastrar um MAC antes de ativar ou completar os dados de uma TV já ativada.</p>
+      <div className="actions left"><button className="btn primary" onClick={() => setEdit({ mac: "", isNew: true })}>Adicionar cliente</button></div>
       {s && (
         <div className="grid cards">
           <div className="card stat"><small>Clientes cadastrados</small><strong>{s.clients}</strong></div>
@@ -88,7 +84,7 @@ export default function Clients() {
           <div className="card stat"><small>Receita mensal prevista</small><strong>{fmtMoney(s.monthlyCents)}</strong></div>
         </div>
       )}
-      <div className="toolbar" style={{ marginTop: 12 }}>
+      <div className="toolbar">
         <input placeholder="Buscar por nome, telefone, endereço ou MAC" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Buscar cliente" />
         <select value={list.params.filter} onChange={(e) => list.filter({ filter: e.target.value })} aria-label="Filtro">
           {FILTERS.map(([k, n]) => <option key={k} value={k}>{n}</option>)}
