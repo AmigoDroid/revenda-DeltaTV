@@ -6,6 +6,7 @@ import Providers from "./Providers.jsx";
 import TransferLicense from "./TransferLicense.jsx";
 import { StockPortal } from "./Stock.jsx";
 import { PayInvoiceButton, PixHistory } from "./Pix.jsx";
+import Clients from "./Clients.jsx";
 import { Badge, Empty, Pager, Table, fmtDate, fmtDateTime, fmtMoney, useAction, useDebounced, useList, useUi } from "../ui.jsx";
 
 // Portal do parceiro: o backend restringe tudo ao parceiro do token (nunca confie neste front).
@@ -66,7 +67,7 @@ export default function PartnerPortal() {
     <>
       <div className="page-head"><h2>{me?.name || "Minha parceria"}</h2>{me && <Badge status={me.effectiveStatus} />}</div>
       {me && <div className="grid cards"><div className="card stat"><small>Dispositivos</small><strong>{me.deviceCount}{me.deviceLimit != null ? `/${me.deviceLimit}` : ""}</strong></div><div className="card stat"><small>Vigência até</small><strong>{fmtDate(me.endsAt)}</strong></div><div className="card stat"><small>Vencimento</small><strong>dia {me.dueDay}</strong><span>tolerância {me.graceDays} dia(s)</span></div></div>}
-      {(me?.kind === "reseller" || me?.kind === "both") && <><StockPortal /><MacDevice /></>}
+      {(me?.kind === "reseller" || me?.kind === "both") && <><StockPortal /><MacDevice /><Clients /></>}
       {isReseller
         ? <Providers providers={providers} codes={codes} onChanged={() => { loadProviders(); loadCodes(); }} />
         : <>
@@ -88,7 +89,7 @@ export default function PartnerPortal() {
           <td>{c.activationCount ?? 0} / {c.maxActivations ?? "∞"}</td>
           <td className="actions">{c.status === "active" && <><button className="btn sm" onClick={() => setEditCode(c)}>Editar</button> <button className="btn sm danger" onClick={() => revoke(c)}>Revogar</button></>}</td>
         </tr>))}</tbody></Table>
-      <h3 style={{ marginTop: 20 }}>Meus dispositivos</h3>
+      <h3 style={{ marginTop: 20 }}>{isReseller ? "Dispositivos ativados (bloquear, transferir, remover)" : "Meus dispositivos"}</h3>
       <div className="toolbar"><input placeholder="Pesquisar por MAC" value={q} onChange={(e) => setQ(e.target.value)} /></div>
       <Table><thead><tr><th>MAC</th><th>Status</th><th>Licença vence em</th><th>Ativado em</th><th /></tr></thead><tbody>{devices.data.map((a) => {
         const lic = a.grantedLicense;

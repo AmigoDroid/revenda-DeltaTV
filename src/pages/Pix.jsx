@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api.js";
+import { qrMatrix } from "../qr.js";
 import { Badge, Empty, Field, Modal, Pager, Table, fmtDateTime, fmtMoney, useAction, useList } from "../ui.jsx";
 
 /**
@@ -11,7 +12,19 @@ const monthsLabel = (m) => `${m} ${m === 1 ? "mês" : "meses"}`;
 const chargeTitle = (c) => (c.purpose === "invoice" ? `Mensalidade ${c.invoice?.competence ?? ""}`.trim() : `${c.quantity} licença(s) de ${monthsLabel(c.months)}`);
 const secondsLeft = (iso) => Math.max(0, Math.floor((new Date(iso).getTime() - Date.now()) / 1000));
 const clock = (s) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
-const PNG64 = /^[A-Za-z0-9+/=]+$/;
+
+/** QR Code desenhado no navegador a partir do "copia e cola": não depende de imagem vinda do provedor. */
+function QrSvg({ text, size = 220 }) {
+  const m = useMemo(() => { try { return qrMatrix(text); } catch { return null; } }, [text]);
+  if (!m) return null;
+  const n = m.length;
+  const path = m.map((row, y) => row.map((on, x) => (on ? `M${x + 4} ${y + 4}h1v1h-1z` : "")).join("")).join("");
+  return (
+    <svg role="img" aria-label="QR Code do Pix" width={size} height={size} viewBox={`0 0 ${n + 8} ${n + 8}`} shapeRendering="crispEdges" style={{ background: "#fff", borderRadius: 8 }}>
+      <path d={path} fill="#000" />
+    </svg>
+  );
+}
 
 export const ChargeBadge = ({ status }) => (status === "pending" ? <Badge status="info" label="Aguardando pagamento" /> : <Badge status={status} />);
 
@@ -87,11 +100,7 @@ export function PixModal({ charge: initial, onClose, onPaid }) {
 
       {pending && (
         <>
-          {charge.qrCodeBase64 && PNG64.test(charge.qrCodeBase64) && (
-            <div style={{ textAlign: "center", marginBottom: 12 }}>
-              <img alt="QR Code do Pix" width={220} height={220} src={`data:image/png;base64,${charge.qrCodeBase64}`} style={{ background: "#fff", padding: 8, borderRadius: 8 }} />
-            </div>
-          )}
+          {charge.qrCode && <div style={{ textAlign: "center", marginBottom: 12 }}><QrSvg text={charge.qrCode} /></div>}
           <Field label="Pix copia e cola" hint="No app do seu banco: Pix → Pagar → Pix Copia e Cola (ou leia o QR Code).">
             <textarea readOnly rows={3} value={charge.qrCode || ""} className="mono" style={{ fontSize: 12 }} onFocus={(e) => e.target.select()} />
           </Field>
