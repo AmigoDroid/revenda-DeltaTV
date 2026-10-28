@@ -35,10 +35,10 @@ function DueBadge({ days }) {
   return <Badge status="active" label={`Em ${days} dias`} />;
 }
 
-function DeviceCell({ device }) {
+function DeviceCell({ device, onAccess }) {
   if (!device) return <span className="muted">TV não ativada</span>;
   const lic = device.licenseExpiresAt && device.licenseStatus === "active" ? `licença até ${fmtDate(device.licenseExpiresAt)}` : null;
-  return <><Badge status={device.status} />{lic && <div className="muted" style={{ fontSize: 12 }}>{lic}</div>}</>;
+  return <><Badge status={device.status} />{lic && <div className="muted" style={{ fontSize: 12 }}>{lic}</div>}<div><button className="btn sm" style={{ marginTop: 4 }} onClick={onAccess}>Ver usuário e senha</button></div></>;
 }
 
 const FILTERS = [["all", "Todos"], ["overdue", "Vencidos"], ["due_soon", "Vencem em 7 dias"], ["no_due", "Sem vencimento"], ["unregistered", "TV ativa sem cadastro"]];
@@ -51,6 +51,7 @@ export default function Clients() {
   const list = useList("/partner/clients", { q: "", filter: "all" });
   const summary = useLoad(() => api("/partner/clients/summary"), []);
   const [edit, setEdit] = useState(null); // linha da lista (cadastrar/editar) ou { mac: "", isNew: true }
+  const [access, setAccess] = useState(null); // linha cujo usuário/senha da lista está aberto
   const { filter: applyFilter, reload: reloadList } = list;
   const reloadSummary = summary.reload;
 
@@ -104,7 +105,7 @@ export default function Clients() {
               <td className="mono">{r.mac}</td>
               <td>{r.priceCents != null ? fmtMoney(r.priceCents) : <span className="muted">—</span>}</td>
               <td>{r.dueDate ? <>{fmtDay(r.dueDate)}<div><DueBadge days={r.daysLeft} /></div></> : <span className="muted">—</span>}</td>
-              <td><DeviceCell device={r.device} /></td>
+              <td><DeviceCell device={r.device} onAccess={() => setAccess(r)} /></td>
               <td className="actions">
                 {r.clientId ? <>
                   <button className="btn sm" onClick={() => renew(r)} title={`Novo vencimento: ${fmtDay(nextDue(r.dueDate))}`}>+1 mês</button>
@@ -117,8 +118,42 @@ export default function Clients() {
       </Table>
       <Empty loading={list.loading} error={list.error} count={list.data.length} />
       <Pager meta={list.meta} onPage={list.setPage} />
+      {access && <ListAccessModal row={access} onClose={() => setAccess(null)} />}
       {edit && <ClientModal row={edit} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); refresh(); }} />}
     </section>
+  );
+}
+
+/** Usuário e senha da lista desta TV. Buscados só ao abrir (cada consulta fica na auditoria); somem da memória ao fechar. */
+function ListAccessModal({ row, onClose }) {
+  const { toast } = useUi();
+  const [cred, setCred] = useState(null);
+  const [error, setError] = useState(null);
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    api("/partner/clients/credentials", { method: "POST", body: { activationId: row.device.activationId } })
+      .then((r) => alive && setCred(r)).catch((e) => alive && setError(e.message));
+    return () => { alive = false; };
+  }, [row.device.activationId]);
+  const copy = async (text, what) => {
+    try { await navigator.clipboard.writeText(text); toast(`${what} copiado.`); } catch { toast("Não foi possível copiar; selecione e copie manualmente.", "bad"); }
+  };
+  return (
+    <Modal title={`Lista de ${row.name || row.mac}`} onClose={onClose}>
+      {error && <p className="error">{error}</p>}
+      {!cred && !error && <p className="muted">Carregando…</p>}
+      {cred && (
+        <dl className="kv">
+          <dt>MAC</dt><dd className="mono">{cred.mac}</dd>
+          {cred.server && <><dt>Servidor</dt><dd>{cred.server}</dd></>}
+          <dt>Usuário</dt><dd><span className="mono">{cred.username}</span> <button className="btn sm" onClick={() => copy(cred.username, "Usuário")}>Copiar</button></dd>
+          <dt>Senha</dt><dd><span className="mono">{show ? cred.password : "••••••••"}</span> <button className="btn sm" onClick={() => setShow((v) => !v)}>{show ? "Ocultar" : "Mostrar"}</button> <button className="btn sm" onClick={() => copy(cred.password, "Senha")}>Copiar</button></dd>
+        </dl>
+      )}
+      <p className="muted" style={{ fontSize: 12 }}>Dado sensível do cliente: esta consulta fica registrada na auditoria.</p>
+      <div className="actions"><button className="btn" onClick={onClose}>Fechar</button></div>
+    </Modal>
   );
 }
 
