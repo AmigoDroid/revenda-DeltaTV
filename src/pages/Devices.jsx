@@ -3,7 +3,7 @@ import { api } from "../api.js";
 import { usePortal } from "../portal.jsx";
 import MacDevice from "./MacDevice.jsx";
 import TransferLicense from "./TransferLicense.jsx";
-import { Badge, Empty, Pager, Table, fmtDate, fmtDateTime, useAction, useDebounced, useList, useUi } from "../ui.jsx";
+import { Badge, Empty, accessStatus, Pager, Table, fmtDate, fmtDateTime, useAction, useDebounced, useList, useUi } from "../ui.jsx";
 
 export default function Devices() {
   const { isReseller } = usePortal();
@@ -31,7 +31,7 @@ export default function Devices() {
           const lic = a.grantedLicense;
           const live = !!lic && lic.status === "active" && lic.remainingDays > 0;
           return (
-            <tr key={a.id}><td className="mono">{a.mac || "—"}</td><td><Badge status={a.status} /></td>
+            <tr key={a.id}><td className="mono">{a.mac || "—"}</td><td><Badge status={accessStatus(a)} /></td>
               <td>{lic ? <>{fmtDate(lic.expiresAt)} <span className="muted">({live ? `${lic.remainingDays} dia(s)` : lic.status === "active" ? "vencida" : lic.status})</span></> : "—"}</td>
               <td>{fmtDateTime(a.activatedAt)}</td><td className="actions">
                 {a.status === "active" && live && <button className="btn sm" onClick={() => setTransfer(a)}>Transferir MAC</button>}{" "}
