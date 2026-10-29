@@ -3,6 +3,7 @@ import { api } from "../api.js";
 import { usePortal } from "../portal.jsx";
 import MacDevice from "./MacDevice.jsx";
 import TransferLicense from "./TransferLicense.jsx";
+import DeviceListsModal from "./DeviceListsModal.jsx";
 import { Badge, Empty, accessStatus, Pager, Table, fmtDate, fmtDateTime, useAction, useDebounced, useList, useUi } from "../ui.jsx";
 
 export default function Devices() {
@@ -13,6 +14,7 @@ export default function Devices() {
   const dq = useDebounced(q);
   const devices = useList("/partner/devices", { q: "" });
   const [transfer, setTransfer] = useState(null); // ativação cuja licença vai para outro MAC
+  const [viewMac, setViewMac] = useState(null); // MAC cujas listas estão abertas
   useEffect(() => { devices.filter({ q: dq }); /* eslint-disable-next-line */ }, [dq]);
 
   const change = async (a, action, o) => {
@@ -34,6 +36,7 @@ export default function Devices() {
             <tr key={a.id}><td className="mono">{a.mac || "—"}</td><td><Badge status={accessStatus(a)} /></td>
               <td>{lic ? <>{fmtDate(lic.expiresAt)} <span className="muted">({live ? `${lic.remainingDays} dia(s)` : lic.status === "active" ? "vencida" : lic.status})</span></> : "—"}</td>
               <td>{fmtDateTime(a.activatedAt)}</td><td className="actions">
+                {isReseller && a.mac && <button className="btn sm" onClick={() => setViewMac(a.mac)}>Listas</button>}{" "}
                 {a.status === "active" && live && <button className="btn sm" onClick={() => setTransfer(a)}>Transferir MAC</button>}{" "}
                 {a.status === "active" && <button className="btn sm" onClick={() => change(a, "block", { title: "Bloquear dispositivo", message: a.mac, reason: "required", danger: true })}>Bloquear</button>}
                 {a.status === "blocked" && <button className="btn sm" onClick={() => change(a, "unblock", { title: "Desbloquear", message: a.mac })}>Desbloquear</button>}
@@ -42,6 +45,7 @@ export default function Devices() {
         })}</tbody></Table>
         <Empty loading={devices.loading} error={devices.error} count={devices.data.length} /><Pager meta={devices.meta} onPage={devices.setPage} />
       </section>
+      {viewMac && <DeviceListsModal mac={viewMac} onClose={() => setViewMac(null)} />}
       {transfer && <TransferLicense activation={transfer} onClose={() => setTransfer(null)} onDone={() => { setTransfer(null); devices.reload(); window.dispatchEvent(new Event("stock-changed")); }} />}
     </>
   );
