@@ -41,6 +41,13 @@ const STATUS = {
 // Status que o usuário precisa ver: a ativação pode estar "active" e o acesso negado (licença cancelada/suspensa/expirada...).
 const DENIED_AS = { LICENSE_CANCELLED: "cancelled", LICENSE_SUSPENDED: "suspended", LICENSE_BLOCKED: "blocked", LICENSE_EXPIRED: "expired", LICENSE_NOT_STARTED: "pending" };
 export const accessStatus = (a) => (a.status !== "active" || !a.access || a.access.allowed ? a.status : DENIED_AS[a.access.code] ?? "blocked");
+/** Tipo do aparelho, como o servidor guarda em devices.platform (rokutv vira roku; webtv vira web). */
+export const PLATFORM_LABEL = { roku: "Roku", android: "Android TV", tizen: "Samsung", webos: "LG", web: "Web" };
+export function PlatformBadge({ platform }) {
+  if (!platform) return <span className="muted">—</span>;
+  return <span className="badge info" title={`Plataforma: ${platform}`}>{PLATFORM_LABEL[platform] || platform}</span>;
+}
+
 export function Badge({ status, label }) {
   const [text, tone] = STATUS[status] || [status, "muted"];
   return <span className={`badge ${tone}`}>{label || text}</span>;

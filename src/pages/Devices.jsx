@@ -4,7 +4,7 @@ import { usePortal } from "../portal.jsx";
 import MacDevice from "./MacDevice.jsx";
 import TransferLicense from "./TransferLicense.jsx";
 import DeviceListsModal from "./DeviceListsModal.jsx";
-import { Badge, Empty, accessStatus, Pager, Table, fmtDate, fmtDateTime, useAction, useDebounced, useList, useUi } from "../ui.jsx";
+import { Badge, Empty, PlatformBadge, accessStatus, Pager, Table, fmtDate, fmtDateTime, useAction, useDebounced, useList, useUi } from "../ui.jsx";
 
 export default function Devices() {
   const { isReseller } = usePortal();
@@ -29,11 +29,11 @@ export default function Devices() {
           <h3>{isReseller ? "Ativações" : "Meus dispositivos"}</h3>
           <input placeholder="Pesquisar por MAC" aria-label="Pesquisar por MAC" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
-        <Table><thead><tr><th>MAC</th><th>Status</th><th>Licença vence em</th><th>Ativado em</th><th /></tr></thead><tbody>{devices.data.map((a) => {
+        <Table><thead><tr><th>MAC</th><th>Tipo</th><th>Status</th><th>Licença vence em</th><th>Ativado em</th><th /></tr></thead><tbody>{devices.data.map((a) => {
           const lic = a.grantedLicense;
           const live = !!lic && lic.status === "active" && lic.remainingDays > 0;
           return (
-            <tr key={a.id}><td className="mono">{a.mac || "—"}</td><td><Badge status={accessStatus(a)} /></td>
+            <tr key={a.id}><td className="mono">{a.mac || "—"}</td><td><PlatformBadge platform={a.platform} /></td><td><Badge status={accessStatus(a)} /></td>
               <td>{lic ? <>{fmtDate(lic.expiresAt)} <span className="muted">({live ? `${lic.remainingDays} dia(s)` : lic.status === "active" ? "vencida" : lic.status})</span></> : "—"}</td>
               <td>{fmtDateTime(a.activatedAt)}</td><td className="actions">
                 {isReseller && a.mac && <button className="btn sm" onClick={() => setViewMac(a.mac)}>Listas</button>}{" "}

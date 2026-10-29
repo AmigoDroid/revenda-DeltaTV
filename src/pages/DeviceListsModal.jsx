@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api.js";
-import { Modal, fmtDateTime, useAction } from "../ui.jsx";
+import { Modal, PlatformBadge, fmtDateTime, useAction } from "../ui.jsx";
 import DeviceLists from "./DeviceLists.jsx";
 
 /**
@@ -26,7 +26,7 @@ export default function DeviceListsModal({ mac, onClose }) {
     <Modal title={`Listas de ${mac}`} onClose={onClose} wide>
       {!device ? <p className="muted">Carregando…</p> : (
         <>
-          <p className="muted">Última atividade: {fmtDateTime(device.lastSeenAt)}{device.appVersion ? ` · App ${device.appVersion}` : ""}</p>
+          <p className="muted"><PlatformBadge platform={device.platform} /> Última atividade: {fmtDateTime(device.lastSeenAt)}{device.appVersion ? ` · App ${device.appVersion}` : ""}</p>
           <DeviceLists device={device} />
         </>
       )}
