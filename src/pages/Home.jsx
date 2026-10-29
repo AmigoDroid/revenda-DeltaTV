@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { api } from "../api.js";
 import { usePortal } from "../portal.jsx";
 import { Badge, fmtDate, fmtMoney, useList, useLoad } from "../ui.jsx";
@@ -47,6 +48,14 @@ function StockPanel({ go }) {
 
 export default function Home({ go }) {
   const { me, isReseller, summary } = usePortal();
+  const [presence, setPresence] = useState(null);
+  // Só a contagem de online é atualizada em tempo quase real (consulta leve); o resto da tela não recarrega.
+  useEffect(() => {
+    const load = () => { if (!document.hidden) api("/partner/devices/presence").then(setPresence).catch(() => {}); };
+    load();
+    const t = setInterval(load, 20000);
+    return () => clearInterval(t);
+  }, []);
   if (!me) return <p className="muted">Carregando…</p>;
   return (
     <>
@@ -56,6 +65,7 @@ export default function Home({ go }) {
           <Metric label={`Vencem em ${summary.dueSoonDays} dias`} value={summary.dueSoon} tone={summary.dueSoon ? "warn" : undefined} onClick={() => go("clientes")} />
           <Metric label="Receita mensal prevista" value={fmtMoney(summary.monthlyCents)} hint={`${summary.clients} cliente(s)`} />
         </>}
+        <Metric label="Online agora" value={presence ? presence.online : "—"} hint={presence ? `Atividade nos últimos ${presence.windowSeconds} s` : "Carregando…"} tone={presence?.online ? "ok" : undefined} onClick={() => go("dispositivos")} />
         <Metric label="Dispositivos" value={`${me.deviceCount}${me.deviceLimit != null ? ` / ${me.deviceLimit}` : ""}`} hint="em uso na parceria" />
         {!isReseller && <><Metric label="Vigência até" value={fmtDate(me.endsAt)} /><Metric label="Mensalidade vence" value={`dia ${me.dueDay}`} hint={`tolerância de ${me.graceDays} dia(s)`} /></>}
       </div>

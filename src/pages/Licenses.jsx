@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api.js";
-import { Badge, Empty, Field, LoadError, Modal, Pager, Table, fmtDate, fmtDateTime, useAction, useDebounced, useList, useLoad, useUi } from "../ui.jsx";
+import { Badge, Empty, Field, LoadError, Modal, OnlineBadge, Pager, Table, fmtDate, fmtDateTime, useAction, useDebounced, useList, useLoad, useUi } from "../ui.jsx";
 import { monthsLabel } from "./Stock.jsx";
 import TransferLicense from "./TransferLicense.jsx";
 
@@ -116,7 +116,7 @@ function Detail({ id, onClose, onChanged }) {
                   <td className="mono">{v.mac || "—"}</td>
                   <td>{v.status === "revoked" ? <><Badge status="revoked" />{v.statusReason && <div className="muted" style={{ fontSize: 12 }}>{v.statusReason}</div>}</> : <Badge status={v.status === "active" && !v.access.allowed ? "blocked" : v.status} label={v.status === "active" && !v.access.allowed ? v.access.message : undefined} />}</td>
                   <td>{fmtDateTime(v.activatedAt)}</td>
-                  <td>{fmtDateTime(v.lastSeenAt)}</td>
+                  <td><OnlineBadge online={v.online} lastSeenAt={v.lastSeenAt} /><div className="muted">{fmtDateTime(v.lastSeenAt)}</div></td>
                   <td className="actions">{v.transferable && l.status === "active" && l.remainingDays > 0 && <button className="btn sm" onClick={() => setTransfer(v)}>Transferir MAC</button>}</td>
                 </tr>))}</tbody>
             </Table>

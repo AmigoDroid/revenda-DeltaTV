@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { api } from "../api.js";
-import { Badge, PlatformBadge, Table, fmtDateTime, useAction, useUi } from "../ui.jsx";
+import { Badge, OnlineBadge, PlatformBadge, Table, fmtDateTime, useAction, useUi } from "../ui.jsx";
 import ConfigureForm from "./ConfigureForm.jsx";
 import DeviceLists, { livesOf, removeMessage, saveMessage } from "./DeviceLists.jsx";
 import { ApplyStock } from "./Stock.jsx";
@@ -78,7 +78,7 @@ export default function MacDevice() {
         <div className="card" style={{ marginTop: 12 }}>
           <div className="page-head"><h4 style={{ margin: 0 }}>{mac}</h4><PlatformBadge platform={device.platform} /><Badge status={livesOf(device).some((l) => l.configured) ? "active" : "pending"} label={`${livesOf(device).length} lista(s)`} /></div>
           <p className="muted">
-            Última atividade: {fmtDateTime(device.lastSeenAt)}
+            <OnlineBadge online={device.online} lastSeenAt={device.lastSeenAt} />{" "}Última atividade: {fmtDateTime(device.lastSeenAt)}
             {device.appVersion ? ` · App ${device.appVersion}` : ""}
           </p>
           <p className="muted">
