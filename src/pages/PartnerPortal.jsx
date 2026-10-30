@@ -7,7 +7,7 @@ import TransferLicense from "./TransferLicense.jsx";
 import { StockPortal } from "./Stock.jsx";
 import { PayInvoiceButton, PixHistory } from "./Pix.jsx";
 import Clients from "./Clients.jsx";
-import { Badge, Empty, Pager, Table, fmtDate, fmtDateTime, fmtMoney, useAction, useDebounced, useList, useUi } from "../ui.jsx";
+import { Badge, Empty, Pager, Table, fmtDate, fmtDateTime, fmtMoney, useAction, useDebounced, useList, useUi, RowMenu } from "../ui.jsx";
 
 // Portal do parceiro: o backend restringe tudo ao parceiro do token (nunca confie neste front).
 export default function PartnerPortal() {
@@ -87,7 +87,12 @@ export default function PartnerPortal() {
             : <span className="muted" title="Código sem licença: não consome estoque. Edite para atrelar a uma licença.">Sem licença</span>}</td>}
           <td>{c.status === "active" ? "Ativo" : "Revogado"}</td>
           <td>{c.activationCount ?? 0} / {c.maxActivations ?? "∞"}</td>
-          <td className="actions">{c.status === "active" && <><button className="btn sm" onClick={() => setEditCode(c)}>Editar</button> <button className="btn sm danger" onClick={() => revoke(c)}>Revogar</button></>}</td>
+          <td className="actions">
+              <RowMenu items={[
+                { label: "Editar", hidden: c.status !== "active", onClick: () => setEditCode(c) },
+                { label: "Revogar", hidden: c.status !== "active", danger: true, onClick: () => revoke(c) },
+              ]} />
+            </td>
         </tr>))}</tbody></Table>
       <h3 style={{ marginTop: 20 }}>{isReseller ? "Dispositivos ativados (bloquear, transferir, remover)" : "Meus dispositivos"}</h3>
       <div className="toolbar"><input placeholder="Pesquisar por MAC" value={q} onChange={(e) => setQ(e.target.value)} /></div>
@@ -98,11 +103,13 @@ export default function PartnerPortal() {
         <tr key={a.id}><td className="mono">{a.mac || "—"}</td><td><Badge status={a.status} /></td>
           <td>{lic ? <>{fmtDate(lic.expiresAt)} <span className="muted">({live ? `${lic.remainingDays} dia(s)` : lic.status === "active" ? "vencida" : lic.status})</span></> : "—"}</td>
           <td>{fmtDateTime(a.activatedAt)}</td><td className="actions">
-          {a.status === "active" && live && <button className="btn sm" onClick={() => setTransfer(a)}>Transferir MAC</button>}{" "}
-          {a.status === "active" && <button className="btn sm" onClick={() => change(a, "block", { title: "Bloquear dispositivo", message: a.mac, reason: "required", danger: true })}>Bloquear</button>}
-          {a.status === "blocked" && <button className="btn sm" onClick={() => change(a, "unblock", { title: "Desbloquear", message: a.mac })}>Desbloquear</button>}
-          {a.status !== "revoked" && !live && <button className="btn sm danger" onClick={() => change(a, "revoke", { title: "Remover ativação", message: a.mac, danger: true })}>Remover</button>}
-          {a.status !== "revoked" && live && <span className="muted" title="Com licença em andamento, use Transferir MAC: remover perderia o tempo restante."> licença em uso</span>}</td></tr>);})}</tbody></Table>
+              <RowMenu items={[
+                { label: "Transferir MAC", hidden: !(a.status === "active" && live), onClick: () => setTransfer(a) },
+                { label: "Bloquear", hidden: a.status !== "active", onClick: () => change(a, "block", { title: "Bloquear dispositivo", message: a.mac, reason: "required", danger: true }) },
+                { label: "Desbloquear", hidden: a.status !== "blocked", onClick: () => change(a, "unblock", { title: "Desbloquear", message: a.mac }) },
+                { label: "Remover", hidden: a.status === "revoked", danger: true, disabled: live, title: live ? "Com licença em andamento, use Transferir MAC: remover perderia o tempo restante." : undefined, onClick: () => change(a, "revoke", { title: "Remover ativação", message: a.mac, danger: true }) },
+              ]} />
+            </td></tr>);})}</tbody></Table>
       <Empty loading={devices.loading} error={devices.error} count={devices.data.length} /><Pager meta={devices.meta} onPage={devices.setPage} />
       {invoicesTable}
       {newCode && <CodeModal checkPath="/partner/codes/check" createPath="/partner/codes" kind={me?.kind} providers={providers} onClose={() => setNewCode(false)} onCreated={() => { setNewCode(false); loadCodes(); }} />}

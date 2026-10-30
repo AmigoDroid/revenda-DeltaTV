@@ -2,7 +2,7 @@ import { useState } from "react";
 import { api } from "../api.js";
 import { usePortal } from "../portal.jsx";
 import CodeModal, { CodeEditModal, monthsLabel } from "./CodeModal.jsx";
-import { Table, useAction, useUi } from "../ui.jsx";
+import { Table, useAction, useUi, RowMenu } from "../ui.jsx";
 
 export default function Codes() {
   const { me, isReseller, codes, providers, loadCodes } = usePortal();
@@ -24,7 +24,12 @@ export default function Codes() {
             : <span className="muted" title="Código sem licença: não consome estoque. Edite para atrelar a uma licença.">Sem licença</span>}</td>}
           <td>{c.status === "active" ? "Ativo" : "Revogado"}</td>
           <td>{c.activationCount ?? 0} / {c.maxActivations ?? "∞"}</td>
-          <td className="actions">{c.status === "active" && <><button className="btn sm" onClick={() => setEditCode(c)}>Editar</button> <button className="btn sm danger" onClick={() => revoke(c)}>Revogar</button></>}</td>
+          <td className="actions">
+              <RowMenu items={[
+                { label: "Editar", hidden: c.status !== "active", onClick: () => setEditCode(c) },
+                { label: "Revogar", hidden: c.status !== "active", danger: true, onClick: () => revoke(c) },
+              ]} />
+            </td>
         </tr>))}</tbody></Table>
       {codes.length === 0 && <p className="muted">Nenhum código criado ainda.</p>}
       {newCode && <CodeModal checkPath="/partner/codes/check" createPath="/partner/codes" kind={me?.kind} providers={providers} onClose={() => setNewCode(false)} onCreated={() => { setNewCode(false); loadCodes(); }} />}

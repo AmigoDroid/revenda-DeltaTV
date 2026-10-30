@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api.js";
-import { Badge, Empty, Field, LoadError, Modal, OnlineBadge, Pager, Table, fmtDate, fmtDateTime, useAction, useDebounced, useList, useLoad, useUi } from "../ui.jsx";
+import { Badge, Empty, Field, LoadError, Modal, OnlineBadge, Pager, Table, fmtDate, fmtDateTime, useAction, useDebounced, useList, useLoad, useUi, RowMenu } from "../ui.jsx";
 import { monthsLabel } from "./Stock.jsx";
 import { buyWithCredit, creditChanged, creditsLabel, useCredit } from "../credit.js";
 import TransferLicense from "./TransferLicense.jsx";
@@ -158,7 +158,11 @@ function Detail({ id, onClose, onChanged }) {
                   <td>{v.status === "revoked" ? <><Badge status="revoked" />{v.statusReason && <div className="muted" style={{ fontSize: 12 }}>{v.statusReason}</div>}</> : <Badge status={v.status === "active" && !v.access.allowed ? "blocked" : v.status} label={v.status === "active" && !v.access.allowed ? v.access.message : undefined} />}</td>
                   <td>{fmtDateTime(v.activatedAt)}</td>
                   <td><OnlineBadge online={v.online} lastSeenAt={v.lastSeenAt} /><div className="muted">{fmtDateTime(v.lastSeenAt)}</div></td>
-                  <td className="actions">{v.transferable && l.status === "active" && l.remainingDays > 0 && <button className="btn sm" onClick={() => setTransfer(v)}>Transferir MAC</button>}</td>
+                  <td className="actions">
+              <RowMenu items={[
+                { label: "Transferir MAC", hidden: !(v.transferable && l.status === "active" && l.remainingDays > 0), onClick: () => setTransfer(v) },
+              ]} />
+            </td>
                 </tr>))}</tbody>
             </Table>
           )}
@@ -250,8 +254,10 @@ export default function Licenses() {
             <td><Badge status={stateOf(l)} /></td>
             <td><Remaining l={l} /></td>
             <td className="actions">
-              <button className="btn sm" onClick={() => setOpen(l.id)}>Detalhes</button>
-              {l.canRenew && <button className="btn sm primary" onClick={() => setRenew(l)}>Renovar</button>}
+              <RowMenu items={[
+                { label: "Detalhes", onClick: () => setOpen(l.id) },
+                { label: "Renovar", hidden: !l.canRenew, onClick: () => setRenew(l) },
+              ]} />
             </td>
           </tr>))}</tbody>
       </Table>

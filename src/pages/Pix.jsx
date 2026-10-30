@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api.js";
 import { qrMatrix } from "../qr.js";
-import { Badge, Empty, Field, Modal, Pager, Table, fmtDateTime, fmtMoney, useAction, useList } from "../ui.jsx";
+import { Badge, Empty, Field, Modal, Pager, Table, fmtDateTime, fmtMoney, useAction, useList, RowMenu } from "../ui.jsx";
 
 /**
  * Pagamento por Pix (portal do revendedor/parceiro).
@@ -228,7 +228,11 @@ export function PixHistory({ refreshKey }) {
         <tbody>{list.data.map((c) => (
           <tr key={c.id}>
             <td>{fmtDateTime(c.createdAt)}</td><td>{chargeTitle(c)}</td><td>{fmtMoney(c.amountCents)}</td><td><ChargeBadge status={c.status} /></td>
-            <td className="actions">{c.status === "pending" && new Date(c.expiresAt) > new Date() && <button className="btn sm" onClick={() => show(c)}>Ver QR Code</button>}</td>
+            <td className="actions">
+              <RowMenu items={[
+                { label: "Ver QR Code", hidden: !(c.status === "pending" && new Date(c.expiresAt) > new Date()), onClick: () => show(c) },
+              ]} />
+            </td>
           </tr>))}</tbody>
       </Table>
       <Empty loading={list.loading} error={list.error} count={list.data.length} />

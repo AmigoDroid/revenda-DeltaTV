@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { api } from "../api.js";
-import { Badge, Field, Modal, Table, useAction, useUi } from "../ui.jsx";
+import { Badge, Field, Modal, Table, useAction, useUi, RowMenu } from "../ui.jsx";
 
 /**
  * Servidores IPTV do próprio revendedor. Ele cadastra o servidor e cria os códigos que apontam para ele.
@@ -28,7 +28,12 @@ export default function Providers({ providers, codes, onChanged }) {
             <td>{p.name}</td><td>{p.baseUrl}</td>
             <td>{codes.filter((c) => c.providerId === p.id && c.status === "active").map((c) => c.code).join(", ") || "—"}</td>
             <td>{p.priority}</td><td><Badge status={p.status} /></td>
-            <td className="actions"><button className="btn sm" onClick={() => setForm(p)}>Editar</button><button className="btn sm danger" onClick={() => remove(p)}>Excluir</button></td>
+            <td className="actions">
+              <RowMenu items={[
+                { label: "Editar", onClick: () => setForm(p) },
+                { label: "Excluir", danger: true, onClick: () => remove(p) },
+              ]} />
+            </td>
           </tr>))}</tbody>
       </Table>
       {providers.length === 0 && <p className="muted">Nenhum servidor cadastrado.</p>}
