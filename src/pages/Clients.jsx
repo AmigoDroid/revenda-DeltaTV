@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { api } from "../api.js";
-import { Badge, Empty, Field, Modal, Pager, Table, dateInput, fmtDate, fmtMoney, formatMac, toCents, useAction, useDebounced, useList, useLoad, useUi } from "../ui.jsx";
+import { usePortal } from "../portal.jsx";
+import { NewWebAccess } from "./WebAccess.jsx";
+import { Badge, Empty, Field, Modal, Pager, RowMenu, Table, dateInput, fmtDate, fmtMoney, formatMac, toCents, useAction, useDebounced, useList, useLoad, useUi } from "../ui.jsx";
 
 /**
  * Clientes do revendedor: agenda por MAC (nome, telefone, endereço, valor e vencimento).
@@ -44,6 +46,8 @@ function DeviceCell({ device, onAccess }) {
 const FILTERS = [["all", "Todos"], ["overdue", "Vencidos"], ["due_soon", "Vencem em 7 dias"], ["no_due", "Sem vencimento"], ["unregistered", "TV ativa sem cadastro"]];
 
 export default function Clients() {
+  const { isReseller } = usePortal();
+  const [webFor, setWebFor] = useState(null); // linha (cliente/MAC) para a qual se gera um acesso do Player Web
   const { confirm } = useUi();
   const run = useAction();
   const [q, setQ] = useState("");
@@ -107,17 +111,22 @@ export default function Clients() {
               <td>{r.dueDate ? <>{fmtDay(r.dueDate)}<div><DueBadge days={r.daysLeft} /></div></> : <span className="muted">—</span>}</td>
               <td><DeviceCell device={r.device} onAccess={() => setAccess(r)} /></td>
               <td className="actions">
-                {r.clientId ? <>
-                  <button className="btn sm" onClick={() => renew(r)} title={`Novo vencimento: ${fmtDay(nextDue(r.dueDate))}`}>+1 mês</button>
-                  <button className="btn sm" onClick={() => setEdit(r)}>Editar</button>
-                  <button className="btn sm danger" onClick={() => remove(r)}>Excluir</button>
-                </> : <button className="btn sm primary" onClick={() => setEdit(r)}>Cadastrar dados</button>}
+                <RowMenu items={r.clientId ? [
+                  { label: "+1 mês", title: `Novo vencimento: ${fmtDay(nextDue(r.dueDate))}`, onClick: () => renew(r) },
+                  { label: "Gerar acesso Player Web", hidden: !(isReseller && r.mac && r.device && r.device.status !== "revoked"), onClick: () => setWebFor(r) },
+                  { label: "Editar", onClick: () => setEdit(r) },
+                  { label: "Excluir", danger: true, onClick: () => remove(r) },
+                ] : [
+                  { label: "Cadastrar dados", onClick: () => setEdit(r) },
+                  { label: "Gerar acesso Player Web", hidden: !(isReseller && r.mac && r.device && r.device.status !== "revoked"), onClick: () => setWebFor(r) },
+                ]} />
               </td>
             </tr>);
         })}</tbody>
       </Table>
       <Empty loading={list.loading} error={list.error} count={list.data.length} />
       <Pager meta={list.meta} onPage={list.setPage} />
+      {webFor && <NewWebAccess initial={{ mac: webFor.mac, label: webFor.name || undefined }} onClose={() => setWebFor(null)} />}
       {access && <ListAccessModal row={access} onClose={() => setAccess(null)} />}
       {edit && <ClientModal row={edit} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); refresh(); }} />}
     </section>
