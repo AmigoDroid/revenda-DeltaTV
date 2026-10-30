@@ -9,7 +9,7 @@ import { Badge, Empty, Field, Modal, Pager, Table, fmtDateTime, fmtMoney, useAct
  * quantos meses". A confirmação é automática (o banco avisa o servidor); esta tela só consulta o status.
  */
 const monthsLabel = (m) => `${m} ${m === 1 ? "mês" : "meses"}`;
-const chargeTitle = (c) => (c.purpose === "invoice" ? `Mensalidade ${c.invoice?.competence ?? ""}`.trim() : `${c.quantity} licença(s) de ${monthsLabel(c.months)}`);
+const chargeTitle = (c) => (c.purpose === "invoice" ? `Mensalidade ${c.invoice?.competence ?? ""}`.trim() : c.purpose === "credit" ? `${c.quantity} ${c.quantity === 1 ? "crédito" : "créditos"}` : `${c.quantity} licença(s) de ${monthsLabel(c.months)}`);
 const secondsLeft = (iso) => Math.max(0, Math.floor((new Date(iso).getTime() - Date.now()) / 1000));
 const clock = (s) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
@@ -116,7 +116,7 @@ export function PixModal({ charge: initial, onClose, onPaid }) {
       {charge.status === "paid" && (
         <div role="status" aria-live="polite" style={{ textAlign: "center" }}>
           <p style={{ color: "var(--ok)", fontSize: 18, fontWeight: 700, margin: "8px 0" }}>Pagamento confirmado!</p>
-          <p className="muted">{charge.purpose === "invoice" ? `A ${chargeTitle(charge).toLowerCase()} foi quitada.` : `${chargeTitle(charge)} já estão no seu estoque.`}</p>
+          <p className="muted">{charge.purpose === "invoice" ? `A ${chargeTitle(charge).toLowerCase()} foi quitada.` : charge.purpose === "credit" ? "Os créditos já estão no seu saldo." : `${chargeTitle(charge)} já estão no seu estoque.`}</p>
         </div>
       )}
 

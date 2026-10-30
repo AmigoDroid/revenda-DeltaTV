@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../api.js";
 import { BuyStock } from "./Pix.jsx";
+import { buyWithCredit, creditChanged, creditsLabel, useCredit } from "../credit.js";
 import { Empty, Field, LoadError, Modal, Pager, Table, fmtDate, fmtDateTime, fmtMoney, useAction, useLoad, useUi } from "../ui.jsx";
 
 export const monthsLabel = (m) => `${m} ${m === 1 ? "mês" : "meses"}`;
@@ -113,40 +114,78 @@ function TransferModal({ balances, onClose, onDone }) {
   );
 }
 
-/** Dentro do cartão do MAC: gasta 1 licença do estoque (ativa uma nova ou renova a do dispositivo). */
+/** Dentro do cartão do MAC: ativa uma licença nova ou renova a do dispositivo, gastando 1 licença do estoque ou pagando com crédito. */
 export function ApplyStock({ mac, onApplied }) {
   const run = useAction();
   const { confirm, toast } = useUi();
   const { data, reload } = useStock(1);
+  const { credit } = useCredit();
   const balances = data?.balances ?? [];
+  const prices = credit?.prices ?? [];
+  const [source, setSource] = useState("stock");
   const [months, setMonths] = useState("");
-  useEffect(() => { if (balances.length && !balances.some((b) => String(b.months) === months)) setMonths(String(balances[0].months)); }, [data]); // eslint-disable-line
   if (!data) return null;
+  const hasStock = balances.length > 0;
+  const hasCredit = prices.length > 0;
+  // Sem estoque, cai sozinho para o crédito (se houver); a escolha manual só aparece quando os dois existem.
+  const src = source === "credit" && hasCredit ? "credit" : hasStock ? "stock" : hasCredit ? "credit" : "stock";
+  const options = src === "credit"
+    ? prices.map((p) => ({ months: p.months, label: `${monthsLabel(p.months)} — ${creditsLabel(p.priceCredits)}` }))
+    : balances.map((b) => ({ months: b.months, label: `${monthsLabel(b.months)} (${b.quantity} disponível)` }));
+  const m = options.some((o) => String(o.months) === months) ? months : String(options[0]?.months ?? "");
+  const price = src === "credit" ? prices.find((p) => String(p.months) === m)?.priceCredits ?? 0 : 0;
+  const enough = src !== "credit" || (credit?.balance ?? 0) >= price;
+
+  const applyToMac = (n) => run(() => api("/partner/stock/apply", { method: "POST", body: { mac, months: n } }));
+  const done = (r) => {
+    toast(`${r.action === "renew" ? "Licença renovada" : "Licença ativada"} até ${fmtDate(r.expiresAt)}.`);
+    changed();
+    reload();
+    onApplied?.(r);
+  };
   const apply = async () => {
-    const m = Number(months);
+    const n = Number(m);
+    if (src === "credit") {
+      const c = await confirm({
+        title: "Pagar com crédito e aplicar", confirmLabel: "Comprar e aplicar",
+        message: `Gastar ${creditsLabel(price)} para comprar 1 licença de ${monthsLabel(n)} e aplicá-la ao MAC ${mac}. Se o dispositivo já tem licença, o prazo é somado ao vencimento atual. Esta ação será registrada em seu nome.`,
+      });
+      if (!c) return;
+      if (!(await run(() => buyWithCredit(n, 1)))) return;
+      creditChanged();
+      changed();
+      const r = await applyToMac(n);
+      if (r && r !== true) done(r);
+      else { toast("A licença foi comprada e já está no seu estoque, mas não foi aplicada. Aplique-a pelo estoque.", "bad"); reload(); }
+      return;
+    }
     const c = await confirm({
       title: "Aplicar licença do estoque", confirmLabel: "Aplicar",
-      message: `Usar 1 licença de ${monthsLabel(m)} no MAC ${mac}. Se o dispositivo já tem licença, o prazo é somado ao vencimento atual. Esta ação será registrada em seu nome.`,
+      message: `Usar 1 licença de ${monthsLabel(n)} no MAC ${mac}. Se o dispositivo já tem licença, o prazo é somado ao vencimento atual. Esta ação será registrada em seu nome.`,
     });
     if (!c) return;
-    const r = await run(() => api("/partner/stock/apply", { method: "POST", body: { mac, months: m } }));
-    if (r && r !== true) {
-      toast(`${r.action === "renew" ? "Licença renovada" : "Licença ativada"} até ${fmtDate(r.expiresAt)}.`);
-      changed();
-      reload();
-      onApplied?.(r);
-    }
+    const r = await applyToMac(n);
+    if (r && r !== true) done(r);
   };
   return (
     <div style={{ marginTop: 12 }}>
       <h4 style={{ margin: "0 0 6px" }}>Licença do estoque</h4>
-      {balances.length === 0 ? <p className="muted">Seu estoque está vazio. Peça mais licenças à plataforma.</p> : (
-        <div className="toolbar">
-          <select value={months} onChange={(e) => setMonths(e.target.value)}>{balances.map((b) => <option key={b.months} value={b.months}>{monthsLabel(b.months)} ({b.quantity} disponível)</option>)}</select>
-          <button className="btn primary" disabled={!months} onClick={apply}>Aplicar a este MAC</button>
-        </div>
+      {!hasStock && !hasCredit ? <p className="muted">Seu estoque está vazio. Peça mais licenças à plataforma.</p> : (
+        <>
+          {!hasStock && <p className="muted" style={{ marginTop: 0 }}>Seu estoque está vazio: você pode pagar com crédito (saldo {credit.balance}).</p>}
+          <div className="toolbar">
+            {hasStock && hasCredit && (
+              <select value={src} onChange={(e) => { setSource(e.target.value); setMonths(""); }} aria-label="Pagar com">
+                <option value="stock">Usar o estoque</option>
+                <option value="credit">Pagar com crédito (saldo {credit.balance})</option>
+              </select>
+            )}
+            <select value={m} onChange={(e) => setMonths(e.target.value)}>{options.map((o) => <option key={o.months} value={o.months}>{o.label}</option>)}</select>
+            <button className="btn primary" disabled={!m || !enough} onClick={apply}>{src === "credit" ? "Comprar e aplicar a este MAC" : "Aplicar a este MAC"}</button>
+          </div>
+          {!enough && <p className="error" style={{ marginTop: 0 }}>Saldo de crédito insuficiente ({credit.balance}). Recarregue na página Crédito.</p>}
+        </>
       )}
     </div>
   );
 }
-

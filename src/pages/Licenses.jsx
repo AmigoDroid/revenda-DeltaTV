@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../api.js";
 import { Badge, Empty, Field, LoadError, Modal, OnlineBadge, Pager, Table, fmtDate, fmtDateTime, useAction, useDebounced, useList, useLoad, useUi } from "../ui.jsx";
 import { monthsLabel } from "./Stock.jsx";
+import { buyWithCredit, creditChanged, creditsLabel, useCredit } from "../credit.js";
 import TransferLicense from "./TransferLicense.jsx";
 
 /**
@@ -28,21 +29,50 @@ function Remaining({ l }) {
 
 const stateOf = (l) => l.effectiveStatus; // "expired" é derivado da data
 
-/** Escolhe a duração entre as que há em estoque e gasta 1 licença na renovação. */
+/** Renova gastando 1 licença do estoque ou pagando com crédito (compra 1 licença e renova na sequência). */
 function RenewModal({ license, onClose, onDone }) {
   const run = useAction();
-  const { toast } = useUi();
+  const { toast, confirm } = useUi();
   const stock = useLoad(() => api("/partner/stock", { query: { page: 1, pageSize: 1 } }), []);
+  const { credit } = useCredit();
   const balances = stock.data?.balances ?? [];
+  const prices = credit?.prices ?? [];
+  const [source, setSource] = useState("stock");
   const [months, setMonths] = useState("");
-  useEffect(() => { if (balances.length && !balances.some((b) => String(b.months) === months)) setMonths(String(balances[0].months)); }, [stock.data]); // eslint-disable-line react-hooks/exhaustive-deps
   const [busy, setBusy] = useState(false);
+  const hasStock = balances.length > 0;
+  const hasCredit = prices.length > 0;
+  const src = source === "credit" && hasCredit ? "credit" : hasStock ? "stock" : hasCredit ? "credit" : "stock";
+  const options = src === "credit"
+    ? prices.map((p) => ({ months: p.months, label: `${monthsLabel(p.months)} — ${creditsLabel(p.priceCredits)}` }))
+    : balances.map((b) => ({ months: b.months, label: `${monthsLabel(b.months)} (${b.quantity} disponível)` }));
+  const m = options.some((o) => String(o.months) === months) ? months : String(options[0]?.months ?? "");
+  const price = src === "credit" ? prices.find((p) => String(p.months) === m)?.priceCredits ?? 0 : 0;
+  const enough = src !== "credit" || (credit?.balance ?? 0) >= price;
 
+  const renew = () => api(`/partner/licenses/${license.id}/renew`, { method: "POST", body: { months: Number(m) } });
+  const finish = (r) => { toast(`Licença renovada até ${fmtDate(r.expiresAt)}.`); changed(); onDone(); };
   const submit = async () => {
+    if (src === "credit") {
+      const ok = await confirm({
+        title: "Pagar com crédito e renovar", confirmLabel: "Comprar e renovar",
+        message: `Gastar ${creditsLabel(price)} para comprar 1 licença de ${monthsLabel(Number(m))} e renovar esta licença.`,
+      });
+      if (!ok) return;
+      setBusy(true);
+      if (!(await run(() => buyWithCredit(Number(m), 1)))) { setBusy(false); return; }
+      creditChanged();
+      changed();
+      const r = await run(renew);
+      setBusy(false);
+      if (r && r !== true) finish(r);
+      else toast("A licença foi comprada e já está no seu estoque, mas a renovação não foi concluída. Renove usando o estoque.", "bad");
+      return;
+    }
     setBusy(true);
-    const r = await run(() => api(`/partner/licenses/${license.id}/renew`, { method: "POST", body: { months: Number(months) } }));
+    const r = await run(renew);
     setBusy(false);
-    if (r && r !== true) { toast(`Licença renovada até ${fmtDate(r.expiresAt)}.`); changed(); onDone(); }
+    if (r && r !== true) finish(r);
   };
   return (
     <Modal title="Renovar licença" onClose={onClose}>
@@ -50,14 +80,25 @@ function RenewModal({ license, onClose, onDone }) {
         {license.device ? <>MAC <span className="mono">{license.device.mac}</span> · </> : null}
         {license.expiresAt ? <>vence em <strong>{fmtDate(license.expiresAt)}</strong>. Se ainda estiver em vigor, o prazo novo é somado ao vencimento; se já venceu, conta a partir de hoje.</> : "ainda não começou a contar."}
       </p>
-      {stock.error ? <LoadError error={stock.error} onRetry={stock.reload} /> : !stock.data ? <p className="muted">Carregando estoque…</p> : balances.length === 0 ? (
+      {stock.error ? <LoadError error={stock.error} onRetry={stock.reload} /> : !stock.data ? <p className="muted">Carregando estoque…</p> : !hasStock && !hasCredit ? (
         <p className="error">Seu estoque está vazio. Compre ou peça mais licenças para renovar.</p>
       ) : (
-        <Field label="Duração" hint="Gasta 1 licença do seu estoque.">
-          <select value={months} onChange={(e) => setMonths(e.target.value)}>{balances.map((b) => <option key={b.months} value={b.months}>{monthsLabel(b.months)} ({b.quantity} disponível)</option>)}</select>
-        </Field>
+        <>
+          {hasStock && hasCredit && (
+            <Field label="Pagar com">
+              <select value={src} onChange={(e) => { setSource(e.target.value); setMonths(""); }}>
+                <option value="stock">Estoque</option>
+                <option value="credit">Crédito (saldo {credit.balance})</option>
+              </select>
+            </Field>
+          )}
+          <Field label="Duração" hint={src === "credit" ? `Compra 1 licença por ${creditsLabel(price)} e renova na hora.` : "Gasta 1 licença do seu estoque."}>
+            <select value={m} onChange={(e) => setMonths(e.target.value)}>{options.map((o) => <option key={o.months} value={o.months}>{o.label}</option>)}</select>
+          </Field>
+          {!enough && <p className="error">Saldo de crédito insuficiente ({credit.balance}). Recarregue na página Crédito.</p>}
+        </>
       )}
-      <div className="actions"><button className="btn" onClick={onClose}>Cancelar</button><button className="btn primary" disabled={!months || busy} onClick={submit}>{busy ? "Renovando…" : "Renovar"}</button></div>
+      <div className="actions"><button className="btn" onClick={onClose}>Cancelar</button><button className="btn primary" disabled={!m || busy || !enough} onClick={submit}>{busy ? "Renovando…" : src === "credit" ? "Comprar e renovar" : "Renovar"}</button></div>
     </Modal>
   );
 }
