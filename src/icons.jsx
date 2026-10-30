@@ -11,6 +11,12 @@ const I = {
   logout: <path d="M10 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h5M15 8l4 4-4 4M19 12H9" />,
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
   x: <path d="M6 6l12 12M18 6L6 18" />,
+  pulse: <path d="M3 12h4l2.5-6 4 12 2.5-6H21" />,
+  clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
+  trend: <path d="M3 17l6-6 4 4 8-8M15 7h6v6" />,
+  alert: <><path d="M12 3l10 18H2z" /><path d="M12 10v5M12 18h.01" /></>,
+  check: <path d="M4 12.5l5 5L20 6.5" />,
+  plus: <path d="M12 5v14M5 12h14" />,
 };
 export const Icon = ({ name, size = 18 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{I[name]}</svg>

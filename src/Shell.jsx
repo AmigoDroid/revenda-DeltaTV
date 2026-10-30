@@ -20,9 +20,17 @@ const NAV = [
   { id: "estoque", label: "Estoque", icon: "box", page: StockPortal, reseller: true, desc: "Licenças disponíveis. Aplique ao MAC de um cliente (em Dispositivos) ou transfira para outro revendedor." },
   { id: "creditos", label: "Crédito", icon: "coin", page: Credits, reseller: true, desc: "Saldo pré-pago para comprar licenças. Recarregue por Pix e troque por licenças no estoque." },
   { id: "licencas", label: "Licenças", icon: "ticket", page: Licenses, reseller: true, desc: "As licenças do seu estoque em uso: veja o prazo de cada uma, renove, suspenda ou reative." },
-  { id: "codigos", label: "Códigos", icon: "key", page: Codes, gap: true, desc: "Códigos que o cliente digita na TV para ativar." },
+  { id: "codigos", label: "Códigos", icon: "key", page: Codes, desc: "Códigos que o cliente digita na TV para ativar." },
   { id: "servidores", label: "Servidores", icon: "server", page: Servers, desc: "Os painéis IPTV usados pelos seus códigos." },
   { id: "financeiro", label: "Financeiro", icon: "wallet", page: Billing, desc: "Mensalidades da parceria e pagamentos por Pix." },
+];
+// Menu por área: o dia a dia (clientes e TVs), o que vende (licenças), a ativação (códigos e servidores) e a conta.
+const GROUPS = [
+  { label: null, ids: ["inicio"] },
+  { label: "Atendimento", ids: ["clientes", "dispositivos"] },
+  { label: "Licenças", ids: ["estoque", "creditos", "licencas"] },
+  { label: "Ativação", ids: ["codigos", "servidores"] },
+  { label: "Conta", ids: ["financeiro", "conta"] },
 ];
 const ACCOUNT = [{ id: "conta", label: "Minha conta", icon: "wallet", page: Blocked, desc: "" }];
 const readRoute = () => (location.hash.startsWith("#/") ? location.hash.slice(2) : "inicio");
@@ -49,11 +57,20 @@ function Layout({ user }) {
       <aside className={`sidebar ${open ? "open" : ""}`}>
         <div className="brand"><Mark /><div><strong>DeltaTV</strong><span>Portal do revendedor</span></div></div>
         <nav aria-label="Principal">
-          {items.map((n) => (
-            <button key={n.id} className={`nav ${n.id === cur.id ? "active" : ""} ${n.gap ? "gap" : ""}`} aria-current={n.id === cur.id ? "page" : undefined} onClick={() => go(n.id)}>
-              <Icon name={n.icon} /><span>{n.label}</span>{badge[n.id] > 0 && <b className="count">{badge[n.id]}</b>}
-            </button>
-          ))}
+          {GROUPS.map((g) => {
+            const list = items.filter((n) => g.ids.includes(n.id));
+            if (!list.length) return null;
+            return (
+              <div className="nav-group" key={g.label || "top"}>
+                {g.label && <div className="nav-heading">{g.label}</div>}
+                {list.map((n) => (
+                  <button key={n.id} className={`nav ${n.id === cur.id ? "active" : ""}`} aria-current={n.id === cur.id ? "page" : undefined} onClick={() => go(n.id)}>
+                    <Icon name={n.icon} /><span>{n.label}</span>{badge[n.id] > 0 && <b className="count">{badge[n.id]}</b>}
+                  </button>
+                ))}
+              </div>
+            );
+          })}
         </nav>
         <div className="user">
           <span className="avatar">{(user.name || user.email || "?")[0].toUpperCase()}</span>
