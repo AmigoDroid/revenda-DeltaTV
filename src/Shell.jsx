@@ -12,6 +12,7 @@ import Servers from "./pages/Servers.jsx";
 import Billing, { Blocked } from "./pages/Billing.jsx";
 import Credits from "./pages/Credits.jsx";
 import WebAccess from "./pages/WebAccess.jsx";
+import Downloads from "./pages/Downloads.jsx";
 
 // Cada item vira uma página. `reseller`: só aparece para quem revende licenças.
 const NAV = [
@@ -23,6 +24,7 @@ const NAV = [
   { id: "licencas", label: "Licenças", icon: "ticket", page: Licenses, reseller: true, desc: "As licenças do seu estoque em uso: veja o prazo de cada uma, renove, suspenda ou reative." },
   { id: "codigos", label: "Códigos", icon: "key", page: Codes, desc: "Códigos que o cliente digita na TV para ativar." },
   { id: "playerweb", label: "Player Web", icon: "tv", page: WebAccess, reseller: true, desc: "Códigos (2 letras + 6 números) para o cliente assistir no navegador, com licença e entrega próprias." },
+  { id: "aplicativos", label: "Downloads e links", icon: "download", page: Downloads, reseller: true, desc: "Aplicativos para baixar e links úteis: copie o link ou o código do Downloader para passar ao seu cliente." },
   { id: "servidores", label: "Servidores", icon: "server", page: Servers, desc: "Os painéis IPTV usados pelos seus códigos." },
   { id: "financeiro", label: "Financeiro", icon: "wallet", page: Billing, desc: "Mensalidades da parceria e pagamentos por Pix." },
 ];
@@ -31,7 +33,7 @@ const GROUPS = [
   { label: null, ids: ["inicio"] },
   { label: "Atendimento", ids: ["clientes", "dispositivos"] },
   { label: "Licenças", ids: ["estoque", "creditos", "licencas"] },
-  { label: "Ativação", ids: ["codigos", "playerweb", "servidores"] },
+  { label: "Ativação", ids: ["codigos", "playerweb", "servidores", "aplicativos"] },
   { label: "Conta", ids: ["financeiro", "conta"] },
 ];
 const ACCOUNT = [{ id: "conta", label: "Minha conta", icon: "wallet", page: Blocked, desc: "" }];
