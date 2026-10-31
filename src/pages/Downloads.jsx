@@ -8,6 +8,8 @@ import { Empty, Pager, Table, useDebounced, useList, useUi } from "../ui.jsx";
 // Só abre links http(s): o endereço vem de um cadastro e nunca deve virar "javascript:" no href.
 const safeHref = (u) => { try { return ["http:", "https:"].includes(new URL(u).protocol) ? u : undefined; } catch { return undefined; } };
 
+const fmtSize = (n) => (n == null ? "" : n >= 1048576 ? `${(n / 1048576).toFixed(1).replace(".", ",")} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
+
 function Copy({ text, label }) {
   const { toast } = useUi();
   const copy = async () => {
@@ -43,6 +45,7 @@ export default function Downloads() {
               <td><span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
                 {href && <a className="btn sm primary" href={href} target="_blank" rel="noopener noreferrer">{d.kind === "link" ? "Abrir" : "Baixar"}</a>}
                 <Copy text={d.downloadUrl} label="Link" />
+                {d.hosted && d.fileSize != null && <span className="muted">{fmtSize(d.fileSize)}</span>}
               </span></td>
             </tr>
           );
