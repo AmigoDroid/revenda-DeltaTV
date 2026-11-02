@@ -60,6 +60,7 @@ function CreateModal({ admin, base, initial = {}, onClose, onCreated }) {
   const [lists, setLists] = useState(null);
   const [activationId, setActivationId] = useState("");
   const [f, setF] = useState({ code: "", username: "", password: "", name: "", url: "" });
+  const [requestKey,setRequestKey]=useState(()=>crypto.randomUUID());
   const [months, setMonths] = useState("");
   const [modes, setModes] = useState({ ...DEFAULTS });
   const [busy, setBusy] = useState(false);
@@ -96,7 +97,10 @@ function CreateModal({ admin, base, initial = {}, onClose, onCreated }) {
     else body.config = { mode: "playlist", name: f.name, url: f.url };
     if (admin) Object.assign(body, { partnerId: partnerId || undefined, useStock: partnerId ? useStock : false });
     setBusy(true);
-    const r = await run(() => api(base, { method: "POST", body }), "Acesso web criado.");
+    const isCodeIssue = !admin && source === "partner";
+    const endpoint = isCodeIssue ? `${base}/by-code` : base;
+    const payload = isCodeIssue ? {label:label||undefined,code:f.code.trim(),username:f.username,password:f.password,requestKey} : body;
+    const r = await run(() => api(endpoint, { method: "POST", body:payload }), "Acesso web criado.");
     setBusy(false);
     if (r) onCreated(r);
   };
@@ -115,7 +119,7 @@ function CreateModal({ admin, base, initial = {}, onClose, onCreated }) {
       <Field label="De onde vem a lista">
         <select value={source} onChange={(e) => setSource(e.target.value)}>
           <option value="mac">Copiar da TV do cliente (pelo MAC)</option>
-          <option value="partner">Servidor do fornecedor (código + usuário + senha)</option>
+          <option value="partner">Emitir por código de parceria (4 a 12 dígitos)</option>
           <option value="playlist">Link da lista (M3U/Xtream)</option>
         </select>
       </Field>
@@ -133,9 +137,9 @@ function CreateModal({ admin, base, initial = {}, onClose, onCreated }) {
       )}
       {source === "partner" && (
         <>
-          <Field label="Código do parceiro" hint="A licença deste acesso é a do código (como numa TV)."><input value={f.code} onChange={(e) => setF({ ...f, code: e.target.value })} maxLength={12} /></Field>
-          <Field label="Usuário"><input value={f.username} onChange={(e) => setF({ ...f, username: e.target.value })} autoComplete="off" /></Field>
-          <Field label="Senha"><PasswordInput value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} /></Field>
+          <Field label="Código do parceiro" hint="Código numérico. Se for do seu estoque, debita a licença da sua revenda; se for de um parceiro de conteúdo autorizado, utiliza o contrato dele. Não exige vínculo entre as contas."><input value={f.code} onChange={(e) => {setF({ ...f, code: e.target.value.replace(/\D/g, "") });setRequestKey(crypto.randomUUID());}} maxLength={12} /></Field>
+          <Field label="Usuário"><input value={f.username} onChange={(e) => {setF({ ...f, username: e.target.value });setRequestKey(crypto.randomUUID());}} autoComplete="off" /></Field>
+          <p className="muted">O código identifica o servidor, mas não armazena as credenciais Xtream do cliente. Para ativar, informe usuário e senha da lista.</p><Field label="Senha"><PasswordInput value={f.password} onChange={(e) => {setF({ ...f, password: e.target.value });setRequestKey(crypto.randomUUID());}} /></Field>
         </>
       )}
       {source === "playlist" && (
