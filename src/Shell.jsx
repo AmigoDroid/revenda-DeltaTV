@@ -17,6 +17,7 @@ import Downloads from "./pages/Downloads.jsx";
 import LoginHistory from "./pages/LoginHistory.jsx";
 import Notifications from "./pages/Notifications.jsx";
 import { api } from "./api.js";
+import ServerHealthAlert from "./ServerHealthAlert.jsx";
 
 // Cada item vira uma página. `reseller`: só aparece para quem revende licenças.
 const NAV = [
@@ -132,6 +133,7 @@ function Layout({ user }) {
           <strong className="topbar-title">{cur.label}</strong>
           <UserMenu user={user} name={me?.name} />
         </div>
+        {!blocked && <ServerHealthAlert onOpenMonitor={() => go("monitoramento")} />}
         {notificationCount > 0 && cur.id !== "notificacoes" && !blocked && <div role="status" style={{margin:"12px 18px 0",padding:"14px 16px",borderRadius:12,background:"#fff1cc",color:"#573800",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",justifyContent:"space-between"}}><strong>🔔 Você tem {notificationCount} notificação(ões) não lida(s).</strong><button type="button" className="btn primary" onClick={() => go("notificacoes")}>Ver mensagens</button></div>}
         <main className="content" key={cur.id}>
           <header className="page-title">
