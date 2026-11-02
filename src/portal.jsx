@@ -24,6 +24,20 @@ export function PortalProvider({ children }) {
   useEffect(() => { if (isReseller) loadSummary(); }, [isReseller]); // eslint-disable-line react-hooks/exhaustive-deps
   // O saldo do estoque aparece na tabela de códigos: recarrega quando o estoque muda.
   useEffect(() => { window.addEventListener("stock-changed", loadCodes); return () => window.removeEventListener("stock-changed", loadCodes); }, []);
+  useEffect(() => {
+    let timer;
+    const refresh = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (document.hidden) return;
+        loadMe(); loadProviders(); loadCodes(); if (isReseller) loadSummary();
+      }, 300);
+    };
+    window.addEventListener("realtime-change", refresh);
+    window.addEventListener("realtime-ready", refresh);
+    return () => { clearTimeout(timer); window.removeEventListener("realtime-change", refresh); window.removeEventListener("realtime-ready", refresh); };
+  }, [isReseller]); // callbacks use current portal state on each render
+
   // Pix pago: a fatura quitada pode reativar a parceria e o saldo do estoque pode ter mudado.
   const paid = () => { invoices.reload(); loadMe(); loadCodes(); setPixTick((n) => n + 1); window.dispatchEvent(new Event("stock-changed")); };
 

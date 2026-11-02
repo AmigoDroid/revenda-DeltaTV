@@ -110,3 +110,13 @@ section+section{margin-top:26px}
 .rowmenu button{background:none;border:0;color:var(--text);text-align:left;font:inherit;font-size:13px;padding:8px 10px;border-radius:6px;cursor:pointer;white-space:nowrap}
 .rowmenu button:hover:not(:disabled),.rowmenu button:focus-visible{background:var(--panel2);outline:none}
 .rowmenu button.danger{color:var(--bad)}.rowmenu button:disabled{opacity:.45;cursor:not-allowed}
+
+/* Histórico de acesso: cards adaptáveis sem rolagem horizontal */
+.login-history-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,350px),1fr)); gap:14px; margin:16px 0; }
+.login-history-card { min-width:0; padding:16px; }
+.login-history-top { display:flex; justify-content:space-between; align-items:start; gap:8px; flex-wrap:wrap; overflow-wrap:anywhere; }
+.login-history-top span { font-size:12px; font-weight:700; padding:4px 8px; border-radius:8px; }
+.login-ok {color:#147d52;background:#dcfce7}.login-fail {color:#b91c1c;background:#fee2e2}
+.login-history-details {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 12px;margin-top:16px}
+.login-history-details > div {min-width:0;overflow-wrap:anywhere}.login-history-details small {display:block;opacity:.7;margin-bottom:3px}.login-history-details b {font-size:13px;font-weight:600}
+@media(max-width:480px) {.login-history-details {grid-template-columns:minmax(0,1fr)} }

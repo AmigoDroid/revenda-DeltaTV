@@ -13,6 +13,9 @@ import Billing, { Blocked } from "./pages/Billing.jsx";
 import Credits from "./pages/Credits.jsx";
 import WebAccess from "./pages/WebAccess.jsx";
 import Downloads from "./pages/Downloads.jsx";
+import LoginHistory from "./pages/LoginHistory.jsx";
+import Notifications from "./pages/Notifications.jsx";
+import { api } from "./api.js";
 
 // Cada item vira uma página. `reseller`: só aparece para quem revende licenças.
 const NAV = [
@@ -26,6 +29,8 @@ const NAV = [
   { id: "playerweb", label: "Player Web", icon: "tv", page: WebAccess, reseller: true, desc: "Códigos (2 letras + 6 números) para o cliente assistir no navegador, com licença e entrega próprias." },
   { id: "aplicativos", label: "Downloads e links", icon: "download", page: Downloads, reseller: true, desc: "Aplicativos para baixar e links úteis: copie o link ou o código do Downloader para passar ao seu cliente." },
   { id: "servidores", label: "Servidores", icon: "server", page: Servers, desc: "Os painéis IPTV usados pelos seus códigos." },
+  { id: "notificacoes", label: "Notificações", icon: "wallet", page: Notifications, desc: "Avisos e comunicados da Delta TV." },
+  { id: "loginhistory", label: "Histórico de login", icon: "users", page: LoginHistory, desc: "Veja seus acessos, IPs e dispositivos." },
   { id: "financeiro", label: "Financeiro", icon: "wallet", page: Billing, desc: "Mensalidades da parceria e pagamentos por Pix." },
 ];
 // Menu por área: o dia a dia (clientes e TVs), o que vende (licenças), a ativação (códigos e servidores) e a conta.
@@ -34,7 +39,7 @@ const GROUPS = [
   { label: "Atendimento", ids: ["clientes", "dispositivos"] },
   { label: "Licenças", ids: ["estoque", "creditos", "licencas"] },
   { label: "Ativação", ids: ["codigos", "playerweb", "servidores", "aplicativos"] },
-  { label: "Conta", ids: ["financeiro", "conta"] },
+  { label: "Conta", ids: ["financeiro", "notificacoes", "loginhistory", "conta"] },
 ];
 const ACCOUNT = [{ id: "conta", label: "Minha conta", icon: "wallet", page: Blocked, desc: "" }];
 const readRoute = () => (location.hash.startsWith("#/") ? location.hash.slice(2) : "inicio");
@@ -43,6 +48,15 @@ function Layout({ user }) {
   const { me, isReseller, summary } = usePortal();
   const [route, setRoute] = useState(readRoute);
   const [open, setOpen] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(0);
+  useEffect(() => {
+    let active = true;
+    const refresh = () => api("/partner/notifications", { query: { limit: 1 } }).then(v => { if (active) setNotificationCount(v.unread || 0); }).catch(() => {});
+    refresh();
+    const event = (e) => { if (e.type === "notification-updated" || e.type === "realtime-ready" || e.detail?.type === "notification") refresh(); };
+    window.addEventListener("realtime-change", event); window.addEventListener("realtime-ready", event); window.addEventListener("notification-updated", event);
+    return () => { active = false; window.removeEventListener("realtime-change", event); window.removeEventListener("realtime-ready", event); window.removeEventListener("notification-updated", event); };
+  }, []);
   useEffect(() => {
     const h = () => setRoute(readRoute());
     window.addEventListener("hashchange", h);
@@ -54,7 +68,7 @@ function Layout({ user }) {
   const go = (id) => { location.hash = `/${id}`; setOpen(false); window.scrollTo(0, 0); };
   const Page = cur.page;
   const title = cur.id === "inicio" ? `Olá, ${(user.name || "").split(" ")[0] || "revendedor"}` : cur.label;
-  const badge = { clientes: summary?.overdue };
+  const badge = { clientes: summary?.overdue, notificacoes: notificationCount };
 
   return (
     <div className="layout">
@@ -85,6 +99,7 @@ function Layout({ user }) {
       {open && <div className="scrim" onClick={() => setOpen(false)} />}
       <div className="main">
         <div className="topbar"><button className="icon" aria-label="Abrir menu" onClick={() => setOpen(true)}><Icon name="menu" size={22} /></button><strong>{cur.label}</strong></div>
+        {notificationCount > 0 && cur.id !== "notificacoes" && !blocked && <div role="status" style={{margin:"12px 18px 0",padding:"14px 16px",borderRadius:12,background:"#fff1cc",color:"#573800",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",justifyContent:"space-between"}}><strong>🔔 Você tem {notificationCount} notificação(ões) não lida(s).</strong><button type="button" className="btn primary" onClick={() => go("notificacoes")}>Ver mensagens</button></div>}
         <main className="content" key={cur.id}>
           <header className="page-title">
             <div><h1>{title}</h1>{cur.desc && <p className="muted">{cur.desc}</p>}</div>

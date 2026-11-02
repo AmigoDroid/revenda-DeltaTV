@@ -1,3 +1,4 @@
+import { connectRealtime } from "./realtime.js";
 import { useEffect, useState } from "react";
 import { getAuth, login } from "./api.js";
 import { UiProvider, Field, useAction } from "./ui.jsx";
@@ -31,6 +32,7 @@ function Login({ onRegister }) {
 }
 
 export default function App() {
+  useEffect(() => connectRealtime(), []);
   const [auth, setAuth] = useState(getAuth());
   useEffect(() => {
     const h = () => setAuth(getAuth());
