@@ -9,6 +9,7 @@ import { StockPortal } from "./pages/Stock.jsx";
 import Licenses from "./pages/Licenses.jsx";
 import Codes from "./pages/Codes.jsx";
 import Servers from "./pages/Servers.jsx";
+import ServerMonitor from "./pages/ServerMonitor.jsx";
 import Billing, { Blocked } from "./pages/Billing.jsx";
 import Credits from "./pages/Credits.jsx";
 import WebAccess from "./pages/WebAccess.jsx";
@@ -29,6 +30,7 @@ const NAV = [
   { id: "playerweb", label: "Player Web", icon: "tv", page: WebAccess, reseller: true, desc: "Códigos (2 letras + 6 números) para o cliente assistir no navegador, com licença e entrega próprias." },
   { id: "aplicativos", label: "Downloads e links", icon: "download", page: Downloads, reseller: true, desc: "Aplicativos para baixar e links úteis: copie o link ou o código do Downloader para passar ao seu cliente." },
   { id: "servidores", label: "Servidores", icon: "server", page: Servers, desc: "Os painéis IPTV usados pelos seus códigos." },
+  { id: "monitoramento", label: "Monitoramento", icon: "server", page: ServerMonitor, desc: "Acompanhe a disponibilidade e o tempo de resposta dos seus servidores." },
   { id: "notificacoes", label: "Notificações", icon: "wallet", page: Notifications, desc: "Avisos e comunicados da Delta TV." },
   { id: "loginhistory", label: "Histórico de login", icon: "users", page: LoginHistory, desc: "Veja seus acessos, IPs e dispositivos." },
   { id: "financeiro", label: "Financeiro", icon: "wallet", page: Billing, desc: "Mensalidades da parceria e pagamentos por Pix." },
@@ -38,7 +40,7 @@ const GROUPS = [
   { label: null, ids: ["inicio"] },
   { label: "Atendimento", ids: ["clientes", "dispositivos"] },
   { label: "Licenças", ids: ["estoque", "creditos", "licencas"] },
-  { label: "Ativação", ids: ["codigos", "playerweb", "servidores", "aplicativos"] },
+  { label: "Ativação", ids: ["codigos", "playerweb", "servidores", "monitoramento", "aplicativos"] },
   { label: "Conta", ids: ["financeiro", "notificacoes", "loginhistory", "conta"] },
 ];
 const ACCOUNT = [{ id: "conta", label: "Minha conta", icon: "wallet", page: Blocked, desc: "" }];
