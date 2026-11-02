@@ -21,6 +21,8 @@ export default function ServerMonitorView({ scope = "admin" }) {
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
   const [data, setData] = useState(null);
+  const [plan,setPlan] = useState(null);
+  useEffect(()=>{if(scope!=="partner")return;let current=true;api("/partner/service-plan").then(p=>{if(current)setPlan(p)}).catch(()=>{});return()=>{current=false}},[scope]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const requestSeq = useRef(0);
@@ -62,6 +64,7 @@ export default function ServerMonitorView({ scope = "admin" }) {
         </div>
         <button type="button" className="btn srv-refresh" disabled={loading} onClick={() => refresh(false)} aria-label="Atualizar monitoramento">↻ {loading ? "Carregando…" : "Atualizar"}</button>
       </section>
+      {scope!=="admin"&&plan&&<div className="srv-notice" role="status">Plano atual: <strong>{plan.features.label}</strong> · {plan.features.maxServers} URL por código · Monitoramento básico. O failover e a prioridade inteligente são serviços exclusivos dos planos que os incluem.</div>}
       {data && !data.monitorEnabled && <div className="srv-notice" role="status">⚠ O monitor automático está desligado no backend. Os servidores não são testados ao abrir esta página. O administrador deve ativar <code>PROVIDER_MONITOR_ENABLED=true</code> após a homologação.</div>}
       <section className="srv-summary" aria-label="Resumo da saúde dos servidores">
         {STATES.map((s) => <button type="button" key={s.key} className={`srv-metric srv-${s.key} ${status === (s.key === "total" ? "" : s.key) ? "selected" : ""}`} onClick={() => { setStatus(s.key === "total" ? "" : s.key); setPage(1); }} aria-pressed={status === (s.key === "total" ? "" : s.key)}>
