@@ -120,3 +120,73 @@ section+section{margin-top:26px}
 .login-history-details {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 12px;margin-top:16px}
 .login-history-details > div {min-width:0;overflow-wrap:anywhere}.login-history-details small {display:block;opacity:.7;margin-bottom:3px}.login-history-details b {font-size:13px;font-weight:600}
 @media(max-width:480px) {.login-history-details {grid-template-columns:minmax(0,1fr)} }
+
+/* Perfil no canto superior direito — mesmo padrão de navegação do painel admin. */
+.topbar{display:flex;align-items:center;gap:8px;justify-content:flex-end;padding:10px clamp(16px,3vw,40px) 0;position:sticky;top:0;z-index:30;background:var(--bg)}
+.topbar .menu-btn,.topbar .topbar-title{display:none}
+.usermenu{position:relative;margin-left:auto;min-width:0}
+.usermenu-btn{display:flex;align-items:center;gap:9px;background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:999px;padding:4px 12px 4px 4px;cursor:pointer;font-weight:600;font-size:13px;max-width:100%}
+.usermenu-btn:hover{background:var(--panel2)}
+.usermenu-btn .avatar{width:30px;height:30px;flex:none;font-size:13px}
+.usermenu-name{max-width:180px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.usermenu-pop{position:absolute;right:0;top:calc(100% + 8px);min-width:min(230px,85vw);max-width:calc(100vw - 24px);background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px;box-shadow:0 12px 40px rgba(0,0,0,.45);z-index:80;overflow-wrap:anywhere}
+.usermenu-pop .who strong,.usermenu-pop .who span{display:block}.usermenu-pop .who span{font-size:12px;color:var(--muted)}
+.usermenu-pop .btn{width:100%;display:flex;align-items:center;justify-content:center;gap:7px}
+@media(max-width:860px){
+  .topbar{justify-content:flex-start;padding:8px 12px;min-height:58px;background:var(--side);border-bottom:1px solid var(--line)}
+  .topbar .menu-btn{display:inline-flex;flex:none}
+  .topbar .topbar-title{display:block;font-size:15px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .usermenu-name{max-width:100px}
+}
+@media(max-width:420px){.usermenu-name{display:none}.usermenu-btn{padding:3px 8px 3px 3px;gap:4px}}
+
+/* Delta TV revenda — cartões de listagem e ações responsivas (padrão admin). */
+.layout,.main,.content,.panel,.card,.table-wrap{min-width:0}
+.content{width:100%;max-width:1440px;margin-inline:auto}
+.panel,.card,.table-wrap{border-radius:15px;border-color:#2b3650;box-shadow:0 10px 32px rgba(0,0,0,.13)}
+.card{background:linear-gradient(145deg,var(--panel),#162139)}
+.table-wrap{max-width:100%}
+.table-wrap table{font-size:13px}
+.table-wrap td,.table-wrap th{vertical-align:middle}
+.table-wrap .badge{max-width:100%;white-space:normal;overflow-wrap:anywhere}
+.toolbar>*{max-width:100%}
+.rowmenu{max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain;z-index:120;width:min(240px,calc(100vw - 24px));box-shadow:0 18px 46px rgba(0,0,0,.55)}
+@media(max-width:860px){
+ .content{padding:18px 12px 48px}
+ .cards{grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr))}
+ .toolbar input,.toolbar select{min-width:0;flex:1 1 190px}
+ .page-head,.section-head{align-items:stretch}
+ .page-head>.btn,.section-head>.btn{max-width:100%}
+ .metrics{grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr))}
+ .modal{max-width:100%}
+}
+@media(max-width:700px){
+ .table-wrap{overflow:visible;border:0;background:transparent;box-shadow:none}
+ .table-wrap table,.table-wrap tbody,.table-wrap tr,.table-wrap td{display:block;width:100%;min-width:0}
+ .table-wrap thead{display:none}
+ .table-wrap tbody{display:grid;gap:12px}
+ .table-wrap tbody tr{min-width:0;padding:11px 13px;border:1px solid #2b3650;border-radius:16px;background:linear-gradient(145deg,var(--panel),#1b2a45);box-shadow:0 7px 24px rgba(0,0,0,.14)}
+ .table-wrap tbody tr:hover{background:#1a2940}
+ .table-wrap tbody td{display:grid;grid-template-columns:minmax(84px,36%) minmax(0,1fr);align-items:start;gap:9px;padding:10px 0;border-bottom:1px solid #2b3650;white-space:normal!important;max-width:none;overflow-wrap:anywhere;text-align:left}
+ .table-wrap tbody td:last-child{border-bottom:0}
+ .table-wrap tbody td::before{content:attr(data-label);font-size:11px;line-height:1.55;font-weight:800;letter-spacing:.03em;color:#a6b6cf;text-transform:uppercase;overflow-wrap:anywhere}
+ .table-wrap tbody td:not([data-label]){display:block}
+ .table-wrap tbody td:not([data-label])::before{display:none}
+ .table-wrap tbody td.actions,.table-wrap tbody td.actions-cell{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;min-height:49px;gap:8px;padding:12px 0 2px;margin-top:3px}
+ .table-wrap tbody td.actions::before,.table-wrap tbody td.actions-cell::before{content:"AÇÕES";display:block;width:auto;flex:1;flex-basis:auto;align-self:center}
+ .table-wrap tbody td.actions .btn,.table-wrap tbody td.actions-cell .btn{margin:0;min-width:42px;min-height:38px}
+ .table-wrap tbody td[colspan]{display:block}
+ .table-wrap tbody td[colspan]::before{display:none}
+ .table-wrap tbody td .mono{overflow-wrap:anywhere;word-break:break-word}
+ .rowmenu-backdrop{position:fixed;inset:0;z-index:119;border:0;background:rgba(0,0,0,.65);cursor:pointer}
+ .rowmenu.rowmenu-mobile{position:fixed;z-index:120;top:auto;left:12px;right:12px;bottom:max(12px,env(safe-area-inset-bottom));width:auto;min-width:0;max-width:none;max-height:min(78dvh,620px);overflow-y:auto;padding:10px;border-radius:18px}
+ .rowmenu-mobile .rowmenu-heading{display:flex;align-items:center;justify-content:space-between;padding:8px 10px 12px;font-size:15px;font-weight:800;border-bottom:1px solid var(--line);margin-bottom:4px}
+ .rowmenu-mobile .rowmenu-heading button{padding:4px 10px;border:0;background:transparent;color:var(--text);font-size:20px}
+ .rowmenu-mobile>button[role=menuitem]{padding:12px 14px;min-height:44px;font-size:14px;white-space:normal}
+ .pager{align-items:stretch}
+ .pager>div{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+ .pager .btn{flex:1}
+ .overlay{padding:12px;align-items:flex-start}
+ .modal-body{padding:14px}
+}
+@media(max-width:380px){.table-wrap tbody td{grid-template-columns:minmax(73px,34%) minmax(0,1fr)}.content{padding-inline:9px}}

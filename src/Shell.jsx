@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { logout } from "./api.js";
 import { Icon, Mark } from "./icons.jsx";
 import { PortalProvider, usePortal } from "./portal.jsx";
@@ -43,6 +43,38 @@ const GROUPS = [
 ];
 const ACCOUNT = [{ id: "conta", label: "Minha conta", icon: "wallet", page: Blocked, desc: "" }];
 const readRoute = () => (location.hash.startsWith("#/") ? location.hash.slice(2) : "inicio");
+
+/** Menu de perfil no cabeçalho, equivalente ao painel administrativo. */
+function UserMenu({ user, name }) {
+  const [expanded, setExpanded] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!expanded) return;
+    const closeOutside = (event) => { if (ref.current && !ref.current.contains(event.target)) setExpanded(false); };
+    const closeEscape = (event) => { if (event.key === "Escape") setExpanded(false); };
+    document.addEventListener("pointerdown", closeOutside);
+    document.addEventListener("keydown", closeEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOutside);
+      document.removeEventListener("keydown", closeEscape);
+    };
+  }, [expanded]);
+  const displayName = name || user.name || user.email || "Revendedor";
+  const initial = String(displayName).trim().charAt(0).toUpperCase();
+  return (
+    <div className="usermenu" ref={ref}>
+      <button type="button" className="usermenu-btn" aria-label={`Perfil: ${displayName}`} aria-haspopup="menu" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>
+        <span className="avatar" aria-hidden="true">{initial}</span>
+        <span className="usermenu-name">{displayName}</span>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+      </button>
+      {expanded && <div className="usermenu-pop" role="menu">
+        <div className="who"><strong>{displayName}</strong><span>{user.email}</span></div>
+        <button type="button" className="btn sm" role="menuitem" onClick={logout}><Icon name="logout" /> Sair da conta</button>
+      </div>}
+    </div>
+  );
+}
 
 function Layout({ user }) {
   const { me, isReseller, summary } = usePortal();
@@ -90,15 +122,14 @@ function Layout({ user }) {
             );
           })}
         </nav>
-        <div className="user">
-          <span className="avatar">{(user.name || user.email || "?")[0].toUpperCase()}</span>
-          <div><strong>{me?.name || user.name}</strong><small>{user.email}</small></div>
-          <button className="icon" title="Sair" aria-label="Sair" onClick={logout}><Icon name="logout" /></button>
-        </div>
       </aside>
       {open && <div className="scrim" onClick={() => setOpen(false)} />}
       <div className="main">
-        <div className="topbar"><button className="icon" aria-label="Abrir menu" onClick={() => setOpen(true)}><Icon name="menu" size={22} /></button><strong>{cur.label}</strong></div>
+        <div className="topbar">
+          <button type="button" className="icon menu-btn" aria-label="Abrir menu" aria-expanded={open} onClick={() => setOpen(true)}><Icon name="menu" size={22} /></button>
+          <strong className="topbar-title">{cur.label}</strong>
+          <UserMenu user={user} name={me?.name} />
+        </div>
         {notificationCount > 0 && cur.id !== "notificacoes" && !blocked && <div role="status" style={{margin:"12px 18px 0",padding:"14px 16px",borderRadius:12,background:"#fff1cc",color:"#573800",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",justifyContent:"space-between"}}><strong>🔔 Você tem {notificationCount} notificação(ões) não lida(s).</strong><button type="button" className="btn primary" onClick={() => go("notificacoes")}>Ver mensagens</button></div>}
         <main className="content" key={cur.id}>
           <header className="page-title">
