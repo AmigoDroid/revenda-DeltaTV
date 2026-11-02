@@ -77,6 +77,13 @@ export default function Home({ go }) {
 
   return (
     <>
+      <div className="home-hero">
+        <div className="home-hero-text"><span className="home-hero-eyebrow"><Icon name="shield" size={14} /> CENTRAL DE OPERAÇÕES</span>
+          <h2>Controle seus clientes em um só lugar.</h2>
+          <p>Ativações, dispositivos e licenças com as informações mais importantes sempre à mão.</p>
+        </div>
+        <div className="home-hero-actions"><button type="button" className="btn primary" onClick={() => go("dispositivos")}><Icon name="tv" size={16}/> Ver dispositivos</button><button type="button" className="btn" onClick={() => go("codigos")}><Icon name="key" size={16}/> Meus códigos</button></div>
+      </div>
       {isReseller && summary && (
         <div className={`attn ${attention.length ? "" : "ok"}`}>
           {attention.length ? <>

@@ -32,8 +32,8 @@ const NAV = [
   { id: "aplicativos", label: "Downloads e links", icon: "download", page: Downloads, reseller: true, desc: "Aplicativos para baixar e links úteis: copie o link ou o código do Downloader para passar ao seu cliente." },
   { id: "servidores", label: "Servidores", icon: "server", page: Servers, desc: "Os painéis IPTV usados pelos seus códigos." },
   { id: "monitoramento", label: "Monitoramento", icon: "server", page: ServerMonitor, desc: "Acompanhe a disponibilidade e o tempo de resposta dos seus servidores." },
-  { id: "notificacoes", label: "Notificações", icon: "wallet", page: Notifications, desc: "Avisos e comunicados da Delta TV." },
-  { id: "loginhistory", label: "Histórico de login", icon: "users", page: LoginHistory, desc: "Veja seus acessos, IPs e dispositivos." },
+  { id: "notificacoes", label: "Notificações", icon: "bell", page: Notifications, desc: "Avisos e comunicados da Delta TV." },
+  { id: "loginhistory", label: "Histórico de login", icon: "history", page: LoginHistory, desc: "Veja seus acessos, IPs e dispositivos." },
   { id: "financeiro", label: "Financeiro", icon: "wallet", page: Billing, desc: "Mensalidades da parceria e pagamentos por Pix." },
 ];
 // Menu por área: o dia a dia (clientes e TVs), o que vende (licenças), a ativação (códigos e servidores) e a conta.
@@ -44,7 +44,7 @@ const GROUPS = [
   { label: "Ativação", ids: ["codigos", "playerweb", "servidores", "monitoramento", "aplicativos"] },
   { label: "Conta", ids: ["financeiro", "notificacoes", "loginhistory", "conta"] },
 ];
-const ACCOUNT = [{ id: "conta", label: "Minha conta", icon: "wallet", page: Blocked, desc: "" }];
+const ACCOUNT = [{ id: "conta", label: "Minha conta", icon: "user", page: Blocked, desc: "" }];
 const readRoute = () => (location.hash.startsWith("#/") ? location.hash.slice(2) : "inicio");
 
 /** Menu de perfil no cabeçalho, equivalente ao painel administrativo. */
@@ -84,6 +84,15 @@ function Layout({ user }) {
   const [route, setRoute] = useState(readRoute);
   const [open, setOpen] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
+  // A gaveta não deve permitir scroll da página atrás dela; Escape também a fecha.
+  useEffect(() => {
+    if (!open) return undefined;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onEscape = (event) => { if (event.key === "Escape") setOpen(false); };
+    document.addEventListener("keydown", onEscape);
+    return () => { document.body.style.overflow = previous; document.removeEventListener("keydown", onEscape); };
+  }, [open]);
   useEffect(() => {
     let active = true;
     const refresh = () => api("/partner/notifications", { query: { limit: 1 } }).then(v => { if (active) setNotificationCount(v.unread || 0); }).catch(() => {});
@@ -108,7 +117,10 @@ function Layout({ user }) {
   return (
     <div className="layout">
       <aside className={`sidebar ${open ? "open" : ""}`}>
-        <div className="brand"><Mark /><div><strong>DeltaTV</strong><span>Portal do revendedor</span></div></div>
+        <div className="brand"><span className="brand-icon"><Mark size={38} /></span><div><strong>Delta<span>TV</span></strong><small>PAINEL DA REVENDA</small></div>
+          <button className="icon sidebar-close" type="button" aria-label="Fechar menu" onClick={() => setOpen(false)}><Icon name="x" size={20}/></button>
+        </div>
+        <div className="sidebar-context"><span className="sidebar-context-dot" /> <span>Área de trabalho</span><span className="sidebar-context-mark">Revenda</span></div>
         <nav aria-label="Principal">
           {GROUPS.map((g) => {
             const list = items.filter((n) => g.ids.includes(n.id));
@@ -125,19 +137,32 @@ function Layout({ user }) {
             );
           })}
         </nav>
+        <div className="sidebar-foot">
+          <span className="sidebar-foot-icon"><Icon name="shield" size={16}/></span>
+          <span><strong>Ambiente protegido</strong><small>Delta TV · Portal comercial</small></span>
+        </div>
       </aside>
-      {open && <div className="scrim" onClick={() => setOpen(false)} />}
+      {open && <button type="button" className="scrim" aria-label="Fechar navegação" onClick={() => setOpen(false)} />}
       <div className="main">
         <div className="topbar">
           <button type="button" className="icon menu-btn" aria-label="Abrir menu" aria-expanded={open} onClick={() => setOpen(true)}><Icon name="menu" size={22} /></button>
-          <strong className="topbar-title">{cur.label}</strong>
-          <UserMenu user={user} name={me?.name} />
+          <div className="topbar-context"><span className="topbar-eyebrow">PAINEL DA REVENDA</span><strong className="topbar-title">{cur.label}</strong></div>
+          <div className="topbar-tools">
+            {!blocked && <button type="button" className="topbar-notify" aria-label={notificationCount > 0 ? `${notificationCount} notificações não lidas` : "Abrir notificações"} title="Notificações" onClick={() => go("notificacoes")}>
+              <Icon name="bell" size={19}/>{notificationCount > 0 && <span className="topbar-notify-count">{notificationCount > 99 ? "99+" : notificationCount}</span>}
+            </button>}
+            <UserMenu user={user} name={me?.name} />
+          </div>
         </div>
         {!blocked && <ServerHealthAlert onOpenMonitor={() => go("monitoramento")} />}
-        {notificationCount > 0 && cur.id !== "notificacoes" && !blocked && <div role="status" style={{margin:"12px 18px 0",padding:"14px 16px",borderRadius:12,background:"#fff1cc",color:"#573800",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",justifyContent:"space-between"}}><strong>🔔 Você tem {notificationCount} notificação(ões) não lida(s).</strong><button type="button" className="btn primary" onClick={() => go("notificacoes")}>Ver mensagens</button></div>}
+        {notificationCount > 0 && cur.id !== "notificacoes" && !blocked && <div role="status" className="unread-banner">
+          <span className="unread-banner-symbol"><Icon name="bell" size={19}/></span>
+          <div className="unread-banner-copy"><strong>{notificationCount === 1 ? "Você tem 1 mensagem não lida" : `Você tem ${notificationCount} mensagens não lidas`}</strong><span>Há comunicados da Delta TV aguardando sua leitura.</span></div>
+          <button type="button" className="btn primary" onClick={() => go("notificacoes")}>Ler mensagens <Icon name="arrow-right" size={15}/></button>
+        </div>}
         <main className="content" key={cur.id}>
           <header className="page-title">
-            <div><h1>{title}</h1>{cur.desc && <p className="muted">{cur.desc}</p>}</div>
+            <div className="page-title-copy"><span className="page-eyebrow">DELTA TV <span>/</span> {cur.label.toUpperCase()}</span><h1>{title}</h1>{cur.desc && <p className="muted">{cur.desc}</p>}</div>
           </header>
           <Page go={go} user={user} />
         </main>

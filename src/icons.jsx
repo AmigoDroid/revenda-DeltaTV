@@ -17,6 +17,11 @@ const I = {
   alert: <><path d="M12 3l10 18H2z" /><path d="M12 10v5M12 18h.01" /></>,
   check: <path d="M4 12.5l5 5L20 6.5" />,
   plus: <path d="M12 5v14M5 12h14" />,
+  bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9zM10 21h4" /></>,
+  history: <><path d="M3 12a9 9 0 1 0 3-6.7M3 4v4h4M12 7v5l3 2" /></>,
+  user: <><circle cx="12" cy="8" r="4"/><path d="M4.5 21c.6-4 3-6 7.5-6s6.9 2 7.5 6" /></>,
+  shield: <><path d="M12 2l8 4v6c0 5-3 8-8 10-5-2-8-5-8-10V6z"/><path d="m9 12 2 2 4-4" /></>,
+  "arrow-right": <path d="M4 12h16m-6-6 6 6-6 6" />,
   download: <path d="M12 3v12M7 10.5l5 5 5-5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />,
 };
 export const Icon = ({ name, size = 18 }) => (
