@@ -1,11 +1,21 @@
-import { getAuth } from "./api.js";
+import { getAuth, ensureAccessToken } from "./api.js";
 const API = import.meta.env.VITE_API_URL || "http://localhost:3000";
 // Socket autenticado por mensagem (nunca por query string ou localStorage compartilhado).
 export function connectRealtime() {
-  let socket, retry, beat, startup, stopped = false, delay = 1000;
-  function closeSocket() { clearInterval(beat); if (socket) { socket.onclose = null; socket.close(); socket = null; } }
-  function connect() {
+  let socket, retry, beat, startup, stopped = false, delay = 1000, generation = 0;
+  function closeSocket() { generation++; clearInterval(beat); if (socket) { socket.onclose = null; socket.close(); socket = null; } }
+  async function connect() {
     if (stopped || !getAuth()?.accessToken) return;
+    const attempt = generation;
+    try { await ensureAccessToken(); }
+    catch {
+      if (!stopped && attempt === generation && getAuth()?.accessToken) {
+        retry = setTimeout(connect, delay);
+        delay = Math.min(delay * 2, 30000);
+      }
+      return;
+    }
+    if (stopped || attempt !== generation || !getAuth()?.accessToken) return;
     const url = new URL("/ws", API); url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
     try { socket = new WebSocket(url); } catch (err) { console.warn("[realtime] Falha ao abrir WebSocket:", err); retry = setTimeout(connect, delay); return; }
     socket.onopen = () => socket.send(JSON.stringify({ type: "auth", token: getAuth()?.accessToken }));
