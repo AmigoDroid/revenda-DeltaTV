@@ -15,8 +15,8 @@ export function ForgotPassword({ initialEmail = "", onBack = () => { window.loca
   };
   return <main className="reset-page"><section className="reset-card">
     <div className="reset-logo">D</div><h1>Esqueceu a senha?</h1>
-    {done ? <><p className="reset-note" role="status">Se existir uma conta de parceiro com esse e-mail, enviaremos um link para criar outra senha. Confira também a pasta de spam.</p><p className="reset-note">O link expira em 30 minutos.</p></>
-      : <form onSubmit={submit}><p>Informe seu e-mail de acesso ao painel do parceiro para receber o link de redefinição.</p><label htmlFor="reset-email">E-mail cadastrado</label><input id="reset-email" type="email" autoComplete="email" required maxLength={200} value={email} onChange={e => setEmail(e.target.value)} placeholder="seu@email.com" />
+    {done ? <><p className="reset-note" role="status">Se existir uma conta de revendedor com esse e-mail, enviaremos um link para criar outra senha. Confira também a pasta de spam.</p><p className="reset-note">O link expira em 30 minutos.</p></>
+      : <form onSubmit={submit}><p>Informe seu e-mail de acesso ao painel da revenda para receber o link de redefinição.</p><label htmlFor="reset-email">E-mail cadastrado</label><input id="reset-email" type="email" autoComplete="email" required maxLength={200} value={email} onChange={e => setEmail(e.target.value)} placeholder="seu@email.com" />
         {error && <p role="alert" className="reset-error">{error}</p>}
         <button className="reset-primary" disabled={busy}>{busy ? "Enviando…" : "Enviar link de redefinição"}</button>
       </form>}

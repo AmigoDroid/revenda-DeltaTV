@@ -120,4 +120,4 @@ export async function deviceApi(path, { method = "GET", body, token } = {}) {
 export const registerReseller = (body) => raw("/auth/register-reseller", { method: "POST", body });
 
 export const completePasswordReset = (token, newPassword) => raw("/auth/password-reset/complete", { method: "POST", body: { token, newPassword } });
-export const requestPasswordReset = (email) => raw("/auth/password-reset/request", { method: "POST", body: { email } });
+export const requestPasswordReset = (email) => raw("/auth/password-reset/request", { method: "POST", body: { email, audience: "reseller" } });
