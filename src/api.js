@@ -118,3 +118,6 @@ export async function deviceApi(path, { method = "GET", body, token } = {}) {
 
 // Cadastro público de revendedor (sem login). A resposta é a mesma para qualquer e-mail.
 export const registerReseller = (body) => raw("/auth/register-reseller", { method: "POST", body });
+
+export const completePasswordReset = (token, newPassword) => raw("/auth/password-reset/complete", { method: "POST", body: { token, newPassword } });
+export const requestPasswordReset = (email) => raw("/auth/password-reset/request", { method: "POST", body: { email } });
