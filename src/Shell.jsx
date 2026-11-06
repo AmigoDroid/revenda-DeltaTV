@@ -3,6 +3,7 @@ import { logout } from "./api.js";
 import { Icon, Mark } from "./icons.jsx";
 import { PortalProvider, usePortal } from "./portal.jsx";
 import Home from "./pages/Home.jsx";
+import WhiteLabelApps from "./WhiteLabelApps.jsx";
 import Clients from "./pages/Clients.jsx";
 import Devices from "./pages/Devices.jsx";
 import { StockPortal } from "./pages/Stock.jsx";
@@ -30,6 +31,7 @@ const NAV = [
   { id: "licencas", label: "Licenças", icon: "ticket", page: Licenses, reseller: true, desc: "As licenças do seu estoque em uso: veja o prazo de cada uma, renove, suspenda ou reative." },
   { id: "codigos", label: "Códigos", icon: "key", page: Codes, desc: "Códigos que o cliente digita na TV para ativar." },
   { id: "playerweb", label: "Player Web", icon: "tv", page: WebAccess, reseller: true, desc: "Códigos (2 letras + 6 números) para o cliente assistir no navegador, com licença e entrega próprias." },
+  { id: "white-label", label: "Meus aplicativos", icon: "download", page: WhiteLabelApps, desc: "Aplicativos contratados, servidores e limites de ativação." },
   { id: "aplicativos", label: "Downloads e links", icon: "download", page: Downloads, reseller: true, desc: "Aplicativos para baixar e links úteis: copie o link ou o código do Downloader para passar ao seu cliente." },
   { id: "servidores", label: "Servidores", icon: "server", page: Servers, desc: "Os painéis IPTV usados pelos seus códigos." },
   { id: "monitoramento", label: "Monitoramento", icon: "server", page: ServerMonitor, desc: "Acompanhe a disponibilidade e o tempo de resposta dos seus servidores." },
@@ -43,7 +45,7 @@ const GROUPS = [
   { label: null, ids: ["inicio"] },
   { label: "Atendimento", ids: ["clientes", "dispositivos"] },
   { label: "Licenças", ids: ["estoque", "creditos", "licencas"] },
-  { label: "Ativação", ids: ["codigos", "playerweb", "servidores", "monitoramento", "aplicativos"] },
+  { label: "Ativação", ids: ["codigos", "playerweb", "servidores", "monitoramento", "white-label", "aplicativos"] },
   { label: "Conta", ids: ["financeiro", "notificacoes", "loginhistory", "conta"] },
 ];
 const ACCOUNT = [{ id: "conta", label: "Minha conta", icon: "user", page: ProfilePage, desc: "Seu perfil e a segurança da conta." }];
