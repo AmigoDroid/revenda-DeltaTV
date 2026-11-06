@@ -10,6 +10,7 @@ const save = (a) => {
   window.dispatchEvent(new Event("auth-changed"));
 };
 export const getAuth = () => auth;
+export const updateAuthUser = (user) => { if (auth?.user && user?.id === auth.user.id) save({ ...auth, user: { ...auth.user, ...user } }); };
 
 export class ApiError extends Error {
   constructor(status, data) {

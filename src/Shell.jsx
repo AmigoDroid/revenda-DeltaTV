@@ -10,13 +10,14 @@ import Licenses from "./pages/Licenses.jsx";
 import Codes from "./pages/Codes.jsx";
 import Servers from "./pages/Servers.jsx";
 import ServerMonitor from "./pages/ServerMonitor.jsx";
-import Billing, { Blocked } from "./pages/Billing.jsx";
+import Billing from "./pages/Billing.jsx";
 import Credits from "./pages/Credits.jsx";
 import WebAccess from "./pages/WebAccess.jsx";
 import Downloads from "./pages/Downloads.jsx";
 import LoginHistory from "./pages/LoginHistory.jsx";
 import Notifications from "./pages/Notifications.jsx";
 import { api } from "./api.js";
+import ProfilePage from "./ProfilePage.jsx";
 import ServerHealthAlert from "./ServerHealthAlert.jsx";
 
 // Cada item vira uma página. `reseller`: só aparece para quem revende licenças.
@@ -35,6 +36,7 @@ const NAV = [
   { id: "notificacoes", label: "Notificações", icon: "bell", page: Notifications, desc: "Avisos e comunicados da Delta TV." },
   { id: "loginhistory", label: "Histórico de login", icon: "history", page: LoginHistory, desc: "Veja seus acessos, IPs e dispositivos." },
   { id: "financeiro", label: "Financeiro", icon: "wallet", page: Billing, desc: "Mensalidades da parceria e pagamentos por Pix." },
+  { id: "conta", label: "Minha conta", icon: "user", page: ProfilePage, desc: "Dados pessoais, segurança, sessões, histórico e notificações." },
 ];
 // Menu por área: o dia a dia (clientes e TVs), o que vende (licenças), a ativação (códigos e servidores) e a conta.
 const GROUPS = [
@@ -44,11 +46,11 @@ const GROUPS = [
   { label: "Ativação", ids: ["codigos", "playerweb", "servidores", "monitoramento", "aplicativos"] },
   { label: "Conta", ids: ["financeiro", "notificacoes", "loginhistory", "conta"] },
 ];
-const ACCOUNT = [{ id: "conta", label: "Minha conta", icon: "user", page: Blocked, desc: "" }];
+const ACCOUNT = [{ id: "conta", label: "Minha conta", icon: "user", page: ProfilePage, desc: "Seu perfil e a segurança da conta." }];
 const readRoute = () => (location.hash.startsWith("#/") ? location.hash.slice(2) : "inicio");
 
 /** Menu de perfil no cabeçalho, equivalente ao painel administrativo. */
-function UserMenu({ user, name }) {
+function UserMenu({ user, name, avatar, onAccount }) {
   const [expanded, setExpanded] = useState(false);
   const ref = useRef(null);
   useEffect(() => {
@@ -67,12 +69,13 @@ function UserMenu({ user, name }) {
   return (
     <div className="usermenu" ref={ref}>
       <button type="button" className="usermenu-btn" aria-label={`Perfil: ${displayName}`} aria-haspopup="menu" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>
-        <span className="avatar" aria-hidden="true">{initial}</span>
+        <span className="avatar" aria-hidden="true">{avatar ? <img src={avatar} alt="" className="profile-menu-avatar"/> : initial}</span>
         <span className="usermenu-name">{displayName}</span>
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
       </button>
       {expanded && <div className="usermenu-pop" role="menu">
         <div className="who"><strong>{displayName}</strong><span>{user.email}</span></div>
+        <button type="button" className="btn sm" role="menuitem" onClick={() => { setExpanded(false); onAccount(); }}><Icon name="user" /> Minha conta</button>
         <button type="button" className="btn sm" role="menuitem" onClick={logout}><Icon name="logout" /> Sair da conta</button>
       </div>}
     </div>
@@ -84,6 +87,16 @@ function Layout({ user }) {
   const [route, setRoute] = useState(readRoute);
   const [open, setOpen] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
+  const [profileDetails, setProfileDetails] = useState(null);
+  useEffect(() => {
+    let live = true;
+    api("/auth/profile").then(data => { if (live) setProfileDetails(data); }).catch(() => {});
+    const changed = event => setProfileDetails(event.detail);
+    window.addEventListener("profile-updated", changed);
+    return () => { live = false; window.removeEventListener("profile-updated", changed); };
+  }, [user.id]);
+  const showBadge = profileDetails?.profile?.showNotificationBadge !== false;
+  const showUnread = profileDetails?.profile?.showUnreadBanner !== false;
   // A gaveta não deve permitir scroll da página atrás dela; Escape também a fecha.
   useEffect(() => {
     if (!open) return undefined;
@@ -130,7 +143,7 @@ function Layout({ user }) {
                 {g.label && <div className="nav-heading">{g.label}</div>}
                 {list.map((n) => (
                   <button key={n.id} className={`nav ${n.id === cur.id ? "active" : ""}`} aria-current={n.id === cur.id ? "page" : undefined} onClick={() => go(n.id)}>
-                    <Icon name={n.icon} /><span>{n.label}</span>{badge[n.id] > 0 && <b className="count">{badge[n.id]}</b>}
+                    <Icon name={n.icon} /><span>{n.label}</span>{showBadge && badge[n.id] > 0 && <b className="count">{badge[n.id]}</b>}
                   </button>
                 ))}
               </div>
@@ -149,13 +162,13 @@ function Layout({ user }) {
           <div className="topbar-context"><span className="topbar-eyebrow">PAINEL DA REVENDA</span><strong className="topbar-title">{cur.label}</strong></div>
           <div className="topbar-tools">
             {!blocked && <button type="button" className="topbar-notify" aria-label={notificationCount > 0 ? `${notificationCount} notificações não lidas` : "Abrir notificações"} title="Notificações" onClick={() => go("notificacoes")}>
-              <Icon name="bell" size={19}/>{notificationCount > 0 && <span className="topbar-notify-count">{notificationCount > 99 ? "99+" : notificationCount}</span>}
+              <Icon name="bell" size={19}/>{showBadge && notificationCount > 0 && <span className="topbar-notify-count">{notificationCount > 99 ? "99+" : notificationCount}</span>}
             </button>}
-            <UserMenu user={user} name={me?.name} />
+            <UserMenu user={user} name={user.name || me?.name} avatar={profileDetails?.profile?.avatarData} onAccount={() => go("conta")} />
           </div>
         </div>
         {!blocked && <ServerHealthAlert onOpenMonitor={() => go("monitoramento")} />}
-        {notificationCount > 0 && cur.id !== "notificacoes" && !blocked && <div role="status" className="unread-banner">
+        {showUnread && notificationCount > 0 && cur.id !== "notificacoes" && !blocked && <div role="status" className="unread-banner">
           <span className="unread-banner-symbol"><Icon name="bell" size={19}/></span>
           <div className="unread-banner-copy"><strong>{notificationCount === 1 ? "Você tem 1 mensagem não lida" : `Você tem ${notificationCount} mensagens não lidas`}</strong><span>Há comunicados da Delta TV aguardando sua leitura.</span></div>
           <button type="button" className="btn primary" onClick={() => go("notificacoes")}>Ler mensagens <Icon name="arrow-right" size={15}/></button>
