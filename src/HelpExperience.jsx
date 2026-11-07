@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "./api.js";
 import "./help-experience.css";
 
@@ -60,6 +60,9 @@ export default function HelpExperience({ screen, portal = "content", userId, onN
   const [category, setCategory] = useState("Todos");
   const [selected, setSelected] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [tourCollapsed, setTourCollapsed] = useState(false);
+  const [mobilePlacement, setMobilePlacement] = useState("bottom");
+  const readerRef = useRef(null);
   const articles = data?.data || [];
   const progressMap = useMemo(() => Object.fromEntries((data?.progress || []).map(p => [p.articleId, p])), [data]);
   const selectedArticle = articles.find(a => a.id === selected);
@@ -102,6 +105,7 @@ export default function HelpExperience({ screen, portal = "content", userId, onN
       const saved = progressMap[article.id];
       const start = at === null ? (saved?.completedAt ? 0 : saved?.stepIndex || 0) : at;
       setTour({ article, index: cappedStep(article, start) });
+      setTourCollapsed(false);
       setTargetClicked(false); setFocusRect(null);
     } else {
       await saveProgress(article, 0, true);
@@ -120,7 +124,16 @@ export default function HelpExperience({ screen, portal = "content", userId, onN
     }
     setBusy(false);
   };
-  const exitTour = () => { setTour(null); setFocusRect(null); setSelected(tour?.article.id || null); };
+  const exitTour = () => { setTour(null); setFocusRect(null); setTourCollapsed(false); setSelected(tour?.article.id || null); };
+
+  // Ao abrir um artigo em um telefone, levá-lo para a área visível sem perder o foco do teclado.
+  useEffect(() => {
+    if (!selectedArticle || screen !== helpScreen) return;
+    const reader = readerRef.current;
+    if (!reader) return;
+    reader.scrollIntoView({ behavior: "smooth", block: "start" });
+    reader.focus({ preventScroll: true });
+  }, [selected, screen]);
 
   useEffect(() => {
     if (!currentStep || currentStep.mode === "external") return;
@@ -133,9 +146,16 @@ export default function HelpExperience({ screen, portal = "content", userId, onN
     if (!currentStep || currentStep.mode === "external" || !TARGETS.has(currentStep.target)) { setFocusRect(null); setTargetFound(false); return; }
     let element = null;
     let didScroll = false;
+    let menuRequested = false;
     let raf = 0;
     const place = () => {
-      const next = document.querySelector(`[data-help-target="${currentStep.target}"]`);
+      // A navegação desktop pode existir no DOM, mas estar invisível no celular.
+      const next = [...document.querySelectorAll(`[data-help-target="${currentStep.target}"]`)]
+        .find(node => { const rect = node.getBoundingClientRect(); return rect.width >= 2 && rect.height >= 2; }) || null;
+      if (!next && !menuRequested && window.innerWidth <= 800 && pages[currentStep.target]) {
+        menuRequested = true;
+        window.dispatchEvent(new CustomEvent("deltatv-help-open-menu"));
+      }
       if (next !== element) {
         if (element) element.removeEventListener("click", acknowledge, true);
         element = next;
@@ -144,6 +164,9 @@ export default function HelpExperience({ screen, portal = "content", userId, onN
       setTargetFound(Boolean(element));
       if (!element) { setFocusRect(null); return; }
       const r = element.getBoundingClientRect();
+      // Colocar as instruções longe da opção marcada, para que ela continue tocável.
+      const viewportHeight = window.visualViewport?.height || window.innerHeight;
+      setMobilePlacement(r.top >= viewportHeight * 0.48 ? "top" : "bottom");
       if (!didScroll && (r.bottom > window.innerHeight - 80 || r.top < 60)) {
         didScroll = true; element.scrollIntoView({ block: "center", behavior: "smooth" });
       }
@@ -156,8 +179,9 @@ export default function HelpExperience({ screen, portal = "content", userId, onN
     observer.observe(document.body, { childList: true, subtree: true });
     raf = requestAnimationFrame(place);
     window.addEventListener("resize", place);
+    window.visualViewport?.addEventListener("resize", place);
     window.addEventListener("scroll", place, true);
-    return () => { observer.disconnect(); cancelAnimationFrame(raf); window.removeEventListener("resize", place); window.removeEventListener("scroll", place, true); if (element) element.removeEventListener("click", acknowledge, true); };
+    return () => { observer.disconnect(); cancelAnimationFrame(raf); window.removeEventListener("resize", place); window.visualViewport?.removeEventListener("resize", place); window.removeEventListener("scroll", place, true); if (element) element.removeEventListener("click", acknowledge, true); };
   }, [tour?.article?.id, tour?.index, screen]);
 
   useEffect(() => {
@@ -192,8 +216,8 @@ export default function HelpExperience({ screen, portal = "content", userId, onN
           {articles.some(a => a.slug === "roku-delta-controle") && <button type="button" onClick={() => openGuide("roku-delta-controle")}>Configurar pelo controle</button>}
           {articles.some(a => a.slug === "roku-white-label-login") && <button type="button" onClick={() => openGuide("roku-white-label-login")}>App com marca própria</button>}
         </div></div>}
-        <div className="help15-categories">{categories.map(c => <button key={c} type="button" className={category === c ? "active" : ""} onClick={() => { setCategory(c); setSelected(null); }}>{c}</button>)}</div>
-        {selectedArticle && <article className="help15-reader" id="help15-reader"><div className="help15-reader-title"><div><span className="help15-overline">GUIA DETALHADO</span><h3>{selectedArticle.title}</h3></div><button type="button" onClick={() => setSelected(null)} aria-label="Fechar leitura">×</button></div>
+        <div className="help15-categories" role="group" aria-label="Filtrar tutoriais por assunto">{categories.map(c => <button key={c} type="button" className={category === c ? "active" : ""} onClick={() => { setCategory(c); setSelected(null); }}>{c}</button>)}</div>
+        {selectedArticle && <article className="help15-reader" id="help15-reader" ref={readerRef} tabIndex={-1}><div className="help15-reader-title"><div><span className="help15-overline">GUIA DETALHADO</span><h3>{selectedArticle.title}</h3></div><button type="button" onClick={() => setSelected(null)} aria-label="Fechar leitura">×</button></div>
           {selectedArticle.imageUrl && <img loading="lazy" alt={`Ilustração do guia ${selectedArticle.title}`} src={selectedArticle.imageUrl} />}
           {textLines(selectedArticle.body).map((p, i) => <p key={i}>{p}</p>)}
           {selectedArticle.category === "Configurar TV" && <TvGuideVisual slug={selectedArticle.slug} />}
@@ -215,7 +239,7 @@ export default function HelpExperience({ screen, portal = "content", userId, onN
     </section></div>}
     {tour && currentStep && <div className="help15-tour" role="dialog" aria-modal="false" aria-label="Tutorial guiado">
       {focusRect && !isExternalStep && <div className="help15-highlight" style={focusRect} aria-hidden="true" />}
-      <div className="help15-tour-popover"><div className="help15-tour-progress"><span>{isExternalStep ? "📺 NA TV / CELULAR" : "◎ NO SEU PAINEL"} · ETAPA {tour.index + 1}/{stepCount(tour.article)}</span><button type="button" onClick={exitTour} aria-label="Sair do tutorial">×</button></div>
+      {tourCollapsed ? <button type="button" className="help17-tour-minimized" onClick={() => setTourCollapsed(false)} aria-label="Mostrar instruções do tutorial"><span>Guia · Etapa {tour.index + 1}/{stepCount(tour.article)}</span><strong>Mostrar instruções ↑</strong></button> : <div className={`help15-tour-popover help17-tour-${mobilePlacement}`}><div className="help15-tour-progress"><span>{isExternalStep ? "📺 NA TV / CELULAR" : "◎ NO SEU PAINEL"} · ETAPA {tour.index + 1}/{stepCount(tour.article)}</span><div className="help17-tour-toolbar"><button type="button" className="help17-minimize" onClick={() => setTourCollapsed(true)} aria-label="Recolher instruções para acessar o botão destacado">Recolher</button><button type="button" onClick={exitTour} aria-label="Sair do tutorial">×</button></div></div>
         <h3>{currentStep.title}</h3><p>{currentStep.body}</p>
         {currentStep.tip && <div className="help16-tip"><strong>Como conferir:</strong> {currentStep.tip}</div>}
         {!isExternalStep && currentStep.target && <p className="help15-location">{targetClicked ? "✓ Você clicou na opção marcada" : targetFound && focusRect ? `◉ Opção destacada: ${TARGET_NAMES[currentStep.target] || "Menu"}. Clique nela para praticar.` : `◌ Opção: ${TARGET_NAMES[currentStep.target] || "Menu"}. Ela pode estar oculta pelo tamanho da tela ou pelas permissões da conta.`}</p>}
@@ -223,7 +247,7 @@ export default function HelpExperience({ screen, portal = "content", userId, onN
         <ol className="help16-tour-steps" aria-label="Progresso das etapas">{tour.article.steps.map((step, i) => <li key={i} className={i < tour.index ? "done" : i === tour.index ? "current" : ""} title={step.title}>{i < tour.index ? "✓" : i + 1}</li>)}</ol>
         {error && <p role="alert" className="help15-error">{error}</p>}
         <div className="help15-actions"><button type="button" onClick={exitTour}>Sair</button>{tour.index > 0 && <button type="button" onClick={() => { setTour(t => ({ ...t, index: t.index - 1 })); setTargetClicked(false); }}>Anterior</button>}<button type="button" className="help15-primary" disabled={busy} onClick={() => void advance()}>{busy ? "Salvando…" : tour.index === stepCount(tour.article) - 1 ? "✓ Concluir treinamento" : "✓ Marcar feita e continuar"}</button></div>
-      </div>
+      </div>}
     </div>}
   </>;
 }

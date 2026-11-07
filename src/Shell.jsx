@@ -93,6 +93,8 @@ function Layout({ user }) {
   const { me, isReseller, summary } = usePortal();
   const [route, setRoute] = useState(readRoute);
   const [open, setOpen] = useState(false);
+  // Permite que o tour mostre as opções que ficam na gaveta de navegação móvel.
+  useEffect(() => { const openForHelp = () => setOpen(true); window.addEventListener("deltatv-help-open-menu", openForHelp); return () => window.removeEventListener("deltatv-help-open-menu", openForHelp); }, []);
   const [notificationCount, setNotificationCount] = useState(0);
   const [profileDetails, setProfileDetails] = useState(null);
   useEffect(() => {
