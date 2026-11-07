@@ -168,7 +168,7 @@ function Layout({ user }) {
           <button type="button" className="icon menu-btn" aria-label="Abrir menu" aria-expanded={open} onClick={() => setOpen(true)}><Icon name="menu" size={22} /></button>
           <div className="topbar-context"><span className="topbar-eyebrow">PAINEL DA REVENDA</span><strong className="topbar-title">{cur.label}</strong></div>
           <div className="topbar-tools">
-            <button type="button" className="btn sm" onClick={() => window.dispatchEvent(new CustomEvent("deltatv-help-context", { detail: { screen: cur.id } }))}>? Ajuda</button>
+            <button type="button" className="btn sm" data-help-target="context-help" onClick={() => window.dispatchEvent(new CustomEvent("deltatv-help-context", { detail: { screen: cur.id } }))}>? Ajuda</button>
             {!blocked && <button type="button" className="topbar-notify" aria-label={notificationCount > 0 ? `${notificationCount} notificações não lidas` : "Abrir notificações"} title="Notificações" onClick={() => go("notificacoes")}>
               <Icon name="bell" size={19}/>{showBadge && notificationCount > 0 && <span className="topbar-notify-count">{notificationCount > 99 ? "99+" : notificationCount}</span>}
             </button>}

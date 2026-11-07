@@ -2,165 +2,227 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "./api.js";
 import "./help-experience.css";
 
+// Only these logical names are accepted by the backend. Never execute selectors from article text.
 const PAGES = {
   content: { home: "overview", help: "help", profile: "account", servers: "servers", codes: "codes", devices: "devices", licenses: "licenses", billing: "billing", studio: "studio", apps: "white-label", notifications: "notifications" },
   reseller: { home: "inicio", help: "ajuda", profile: "conta", servers: "servidores", codes: "codigos", devices: "dispositivos", licenses: "licencas", billing: "financeiro", studio: "white-label", apps: "white-label", notifications: "notificacoes" },
 };
-const friendly = { home: "Início", help: "Ajuda", profile: "Minha conta", servers: "Servidores", codes: "Códigos", devices: "Dispositivos", licenses: "Licenças", billing: "Financeiro", studio: "Estúdio Visual", apps: "Aplicativos", notifications: "Notificações", "add-server": "Adicionar servidor", "new-code": "Novo código", "search-device": "Buscar MAC" };
-const shortText = (body) => String(body || "").split(/\n+/).filter(Boolean);
-const progressPercent = (article, progress) => progress?.completedAt ? 100 : progress ? Math.round((Math.min((progress.stepIndex || 0), Math.max(0, (article.steps || []).length - 1)) / Math.max(1, article.steps?.length || 1)) * 100) : 0;
+const TARGET_NAMES = { home: "Início", help: "Central de Ajuda", profile: "Minha conta", servers: "Servidores", codes: "Códigos", devices: "Dispositivos", licenses: "Licenças", billing: "Financeiro", studio: "Estúdio Visual", apps: "Meus aplicativos", notifications: "Notificações", "add-server": "Adicionar servidor", "new-code": "Novo código", "search-device": "Buscar MAC", "context-help": "? Ajuda" };
+const TARGETS = new Set(Object.keys(TARGET_NAMES));
+const textLines = value => String(value || "").split(/\n+/).map(s => s.trim()).filter(Boolean);
+const stepCount = article => (Array.isArray(article?.steps) ? article.steps.length : 0);
+const cappedStep = (article, index) => Math.max(0, Math.min(Number(index) || 0, Math.max(0, stepCount(article) - 1)));
+const percent = (article, saved) => saved?.completedAt ? 100 : saved ? Math.round(cappedStep(article, saved.stepIndex) / Math.max(1, stepCount(article)) * 100) : 0;
+
+function StepChecklist({ article, progress, startAt }) {
+  const count = stepCount(article);
+  return <ol className="help16-checklist" aria-label="Etapas do guia">
+    {(article.steps || []).map((s, i) => {
+      const done = Boolean(progress?.completedAt || (progress && i < progress.stepIndex));
+      return <li key={i} className={done ? "help16-step-done" : ""}>
+        <span className="help16-checkmark" aria-hidden="true">{done ? "✓" : i + 1}</span>
+        <div><strong>{s.title}</strong><p>{s.body}</p>{s.tip && <small>Confira: {s.tip}</small>}
+          {s.mode === "external" && <em>Na TV Roku / no celular</em>}
+        </div>
+        <button type="button" onClick={() => startAt(i)} aria-label={`Abrir etapa ${i + 1}: ${s.title}`}>{done ? "Rever" : "Ver etapa"}</button>
+      </li>;
+    })}
+    {!count && <li>Este guia não possui etapas interativas.</li>}
+  </ol>;
+}
+
+function TvGuideVisual({ slug }) {
+  const ownBrand = slug === "roku-white-label-login";
+  const multiple = slug === "roku-delta-varias-listas";
+  const problems = slug === "roku-problemas-de-conexao";
+  const remote = slug === "roku-delta-controle";
+  return <div className="help16-tv-preview" role="img" aria-label="Diagrama ilustrativo do caminho na televisão Roku">
+    <div className="help16-tv-monitor"><div className="help16-tv-header">{ownBrand ? "SEU APLICATIVO" : "DELTA TV"}<span>ROKU</span></div>
+      {multiple ? <><strong>Configurações → Conteúdo</strong><div className="help16-tv-field">Gerenciador de listas</div><div className="help16-tv-focus">▸ Adicionar lista</div><div className="help16-tv-field">Usar esta lista</div></>
+      : problems ? <><strong>Verificar conexão</strong><div className="help16-tv-field">Rede e credenciais</div><div className="help16-tv-focus">▸ Mensagem do aplicativo</div><div className="help16-tv-field">Testar reprodução</div></>
+      : remote || ownBrand ? <><strong>{ownBrand ? "Entre com sua conta IPTV" : "Conectar dispositivo"}</strong>{!ownBrand && <div className="help16-tv-field">Código da parceria / licença</div>}<div className="help16-tv-field">Usuário IPTV {ownBrand ? "" : "/ nome da lista"}</div><div className="help16-tv-field">Senha IPTV {ownBrand ? "" : "/ URL da playlist"}</div><div className="help16-tv-focus">▸ CONECTAR</div></>
+      : <><strong>Conectar dispositivo</strong><div className="help16-tv-qr"><span aria-hidden="true">▦</span><div>QR Code na TV<br/><small>Escaneie com o celular</small></div></div><div className="help16-tv-focus">▸ CONECTAR</div></>}
+    </div><small>Diagrama ilustrativo: os botões e textos podem variar entre versões. Este não é um QR Code funcional.</small>
+  </div>;
+}
 
 export default function HelpExperience({ screen, portal = "content", userId, onNavigate }) {
   const pages = PAGES[portal] || PAGES.content;
-  const helpScreen = pages.help;
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [welcome, setWelcome] = useState(false);
   const [tour, setTour] = useState(null);
   const [focusRect, setFocusRect] = useState(null);
+  const [targetFound, setTargetFound] = useState(false);
+  const [targetClicked, setTargetClicked] = useState(false);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Todos");
   const [selected, setSelected] = useState(null);
   const [busy, setBusy] = useState(false);
-
-  const reload = useCallback(async () => {
-    const result = await api("/partner/help");
-    setData(result);
-    return result;
-  }, []);
-  useEffect(() => {
-    let active = true;
-    setLoading(true); setData(null); setTour(null); setSelected(null); setWelcome(false);
-    api("/partner/help").then((result) => {
-      if (!active) return;
-      setData(result);
-      const starter = result.data?.find((a) => a.isOnboarding && a.slug === "primeiros-passos") || result.data?.find((a) => a.isOnboarding);
-      if (!result.welcomeSeenAt && starter) setWelcome(true);
-    }).catch((e) => { if (active) setError(e.message); }).finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, [userId]);
-
   const articles = data?.data || [];
   const progressMap = useMemo(() => Object.fromEntries((data?.progress || []).map(p => [p.articleId, p])), [data]);
   const selectedArticle = articles.find(a => a.id === selected);
-  const categories = useMemo(() => ["Todos", ...new Set(articles.map(a => a.category))], [articles]);
-  const filtered = articles.filter(a => (category === "Todos" || category === a.category) && `${a.title} ${a.summary} ${a.category} ${a.body}`.toLocaleLowerCase("pt-BR").includes(search.toLocaleLowerCase("pt-BR")));
+  const categories = useMemo(() => ["Todos", ...new Set(articles.map(a => a.category))], [data]);
+  const filtered = articles.filter(a => (category === "Todos" || category === a.category) && `${a.title} ${a.summary} ${a.category} ${a.body} ${(a.steps || []).map(s => `${s.title} ${s.body} ${s.tip || ""}`).join(" ")}`.toLocaleLowerCase("pt-BR").includes(search.toLocaleLowerCase("pt-BR")));
   const currentStep = tour?.article?.steps?.[tour.index] || null;
+  const isExternalStep = currentStep?.mode === "external";
+  const helpScreen = pages.help;
+  const reload = useCallback(async () => { const result = await api("/partner/help"); setData(result); return result; }, []);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true); setData(null); setTour(null); setSelected(null); setWelcome(false); setError("");
+    api("/partner/help").then(result => {
+      if (!active) return;
+      setData(result);
+      const starter = result.data?.find(a => a.isOnboarding && a.slug === "primeiros-passos") || result.data?.find(a => a.isOnboarding);
+      if (!result.welcomeSeenAt && starter) setWelcome(true);
+    }).catch(e => { if (active) setError(e.message); }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [userId]);
 
   const markWelcome = async () => {
     setWelcome(false);
     setData(d => d ? { ...d, welcomeSeenAt: d.welcomeSeenAt || new Date().toISOString() } : d);
     try { await api("/partner/help/welcome-seen", { method: "POST" }); }
-    catch (e) { setError(`Não foi possível salvar a preferência de boas-vindas: ${e.message}`); }
+    catch (e) { setError(`Não foi possível registrar boas-vindas: ${e.message}`); }
   };
-  const saveProgress = async (article, stepIndex, completed = false) => {
+  const saveProgress = async (article, index, completed = false) => {
     try {
-      const value = await api(`/partner/help/${article.id}/progress`, { method: "PUT", body: { stepIndex, completed } });
+      const value = await api(`/partner/help/${article.id}/progress`, { method: "PUT", body: { stepIndex: index, completed } });
       setData(d => d ? { ...d, progress: [...(d.progress || []).filter(p => p.articleId !== article.id), value] } : d);
-    } catch (e) { setError(`Falha ao registrar o progresso: ${e.message}`); }
+      return true;
+    } catch (e) { setError(`Não foi possível salvar esta etapa: ${e.message}`); return false; }
   };
-  const begin = async (article) => {
+  const begin = async (article, at = null) => {
     if (!article) return;
     setError(""); setWelcome(false);
-    const stored = progressMap[article.id];
-    const index = stored?.completedAt ? 0 : Math.min(stored?.stepIndex || 0, Math.max(0, (article.steps || []).length - 1));
-    if (article.steps?.length) {
-      setTour({ article, index });
-      void saveProgress(article, index, false);
+    if (stepCount(article)) {
+      const saved = progressMap[article.id];
+      const start = at === null ? (saved?.completedAt ? 0 : saved?.stepIndex || 0) : at;
+      setTour({ article, index: cappedStep(article, start) });
+      setTargetClicked(false); setFocusRect(null);
     } else {
       await saveProgress(article, 0, true);
-      setSelected(article.id);
-      onNavigate(helpScreen);
+      setSelected(article.id); onNavigate(helpScreen);
     }
   };
-  const advance = async (direction) => {
+  const advance = async () => {
     if (!tour || busy) return;
     setBusy(true);
-    try {
-      const next = tour.index + direction;
-      if (next >= tour.article.steps.length) {
-        await saveProgress(tour.article, tour.article.steps.length - 1, true);
-        setTour(null); setFocusRect(null);
-      } else if (next >= 0) {
-        setTour(t => ({ ...t, index: next }));
-        void saveProgress(tour.article, next, false);
-      }
-    } finally { setBusy(false); }
+    const next = tour.index + 1;
+    const completed = next >= stepCount(tour.article);
+    const ok = await saveProgress(tour.article, completed ? tour.index : next, completed);
+    if (ok) {
+      if (completed) { setTour(null); setFocusRect(null); setSelected(tour.article.id); onNavigate(helpScreen); }
+      else { setTour(t => ({ ...t, index: next })); setTargetClicked(false); setFocusRect(null); }
+    }
+    setBusy(false);
   };
-  const exitTour = () => { setTour(null); setFocusRect(null); };
+  const exitTour = () => { setTour(null); setFocusRect(null); setSelected(tour?.article.id || null); };
 
   useEffect(() => {
-    if (!currentStep) return undefined;
-    const targetScreen = pages[currentStep.screen || currentStep.target];
-    if (targetScreen && targetScreen !== screen) onNavigate(targetScreen);
-    return undefined;
-  }, [currentStep, screen, pages, onNavigate]);
+    if (!currentStep || currentStep.mode === "external") return;
+    const logical = currentStep.screen || (pages[currentStep.target] ? currentStep.target : null);
+    const destination = pages[logical];
+    if (destination && destination !== screen) onNavigate(destination);
+  }, [tour?.article?.id, tour?.index, screen, onNavigate]);
+
   useEffect(() => {
-    if (!currentStep) return undefined;
-    let raf1, raf2;
+    if (!currentStep || currentStep.mode === "external" || !TARGETS.has(currentStep.target)) { setFocusRect(null); setTargetFound(false); return; }
+    let element = null;
+    let didScroll = false;
+    let raf = 0;
     const place = () => {
-      const target = currentStep.target ? document.querySelector(`[data-help-target="${currentStep.target}"]`) : null;
-      if (!target) { setFocusRect(null); return; }
-      const rect = target.getBoundingClientRect();
-      if (rect.width < 2 || rect.height < 2 || rect.bottom < 0 || rect.top > window.innerHeight) { setFocusRect(null); return; }
-      setFocusRect({ top: rect.top - 5, left: rect.left - 5, width: rect.width + 10, height: rect.height + 10 });
+      const next = document.querySelector(`[data-help-target="${currentStep.target}"]`);
+      if (next !== element) {
+        if (element) element.removeEventListener("click", acknowledge, true);
+        element = next;
+        if (element) element.addEventListener("click", acknowledge, true);
+      }
+      setTargetFound(Boolean(element));
+      if (!element) { setFocusRect(null); return; }
+      const r = element.getBoundingClientRect();
+      if (!didScroll && (r.bottom > window.innerHeight - 80 || r.top < 60)) {
+        didScroll = true; element.scrollIntoView({ block: "center", behavior: "smooth" });
+      }
+      setFocusRect(r.width >= 2 && r.height >= 2 && r.bottom >= 0 && r.top <= window.innerHeight && r.right >= 0 && r.left <= window.innerWidth
+        ? { top: Math.max(3, r.top - 6), left: Math.max(3, r.left - 6), width: r.width + 12, height: r.height + 12 }
+        : null);
     };
-    raf1 = requestAnimationFrame(() => { raf2 = requestAnimationFrame(place); });
+    const acknowledge = () => setTargetClicked(true);
+    const observer = new MutationObserver(() => { cancelAnimationFrame(raf); raf = requestAnimationFrame(place); });
+    observer.observe(document.body, { childList: true, subtree: true });
+    raf = requestAnimationFrame(place);
     window.addEventListener("resize", place);
     window.addEventListener("scroll", place, true);
-    return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); window.removeEventListener("resize", place); window.removeEventListener("scroll", place, true); };
-  }, [currentStep, screen]);
+    return () => { observer.disconnect(); cancelAnimationFrame(raf); window.removeEventListener("resize", place); window.removeEventListener("scroll", place, true); if (element) element.removeEventListener("click", acknowledge, true); };
+  }, [tour?.article?.id, tour?.index, screen]);
+
   useEffect(() => {
     if (!tour && !welcome) return undefined;
-    const esc = (e) => { if (e.key === "Escape") { if (tour) exitTour(); else void markWelcome(); } };
+    const esc = e => { if (e.key === "Escape") { if (tour) exitTour(); else void markWelcome(); } };
     document.addEventListener("keydown", esc);
     return () => document.removeEventListener("keydown", esc);
   }, [tour, welcome]);
   useEffect(() => {
-    const handler = (event) => {
+    const handler = event => {
       const logical = Object.entries(pages).find(([, route]) => route === event.detail?.screen)?.[0];
-      const relevant = articles.find(a => a.steps?.some(step => step.screen === logical || step.target === logical));
+      const relevant = articles.find(a => a.steps?.some(s => s.screen === logical || s.target === logical));
       setCategory("Todos"); setSearch(""); setSelected(relevant?.id || null); onNavigate(helpScreen);
     };
     window.addEventListener("deltatv-help-context", handler);
     return () => window.removeEventListener("deltatv-help-context", handler);
-  }, [helpScreen, onNavigate, articles, pages]);
+  }, [helpScreen, onNavigate, data]);
+
+  const openGuide = slug => {
+    const article = articles.find(a => a.slug === slug);
+    if (article) { setCategory("Todos"); setSearch(""); setSelected(article.id); onNavigate(helpScreen); }
+  };
+  const tvGuides = articles.filter(a => a.category === "Configurar TV");
 
   return <>
     {screen === helpScreen && <section className="help15-center" aria-label="Central de Ajuda">
-      <div className="help15-hero"><span className="help15-overline">CENTRAL DE APRENDIZADO</span><h2>Como podemos ajudar?</h2><p>Aprenda a usar o painel com guias rápidos, tutoriais interativos e instruções por assunto.</p><div className="help15-search"><span aria-hidden="true">⌕</span><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por assunto ou funcionalidade" aria-label="Buscar tutoriais" /></div></div>
+      <div className="help15-hero"><span className="help15-overline">CENTRAL DE APRENDIZADO</span><h2>Aprenda a usar sua plataforma</h2><p>Guias detalhados, opções destacadas no painel e treinamento para conectar uma lista IPTV à TV Roku. Cada etapa feita fica marcada no seu progresso.</p><div className="help15-search"><span aria-hidden="true">⌕</span><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Ex.: QR Code, adicionar lista, servidores, licença" aria-label="Buscar tutoriais" /></div></div>
       {error && <p role="alert" className="help15-error">{error} <button type="button" onClick={() => { setError(""); void reload().catch(e => setError(e.message)); }}>Tentar novamente</button></p>}
       {loading ? <p>Carregando tutoriais…</p> : !data ? <p>Não foi possível carregar a Central de Ajuda.</p> : <>
+        {tvGuides.length > 0 && <div className="help16-tv-banner"><div><span className="help15-overline">PASSO A PASSO PARA A TELEVISÃO</span><h3>Como colocar a lista IPTV na Roku?</h3><p>Escolha o método que aparece no seu aplicativo. O DeltaTV tem QR ou cadastro pelo controle; o aplicativo white-label usa usuário e senha.</p></div><div className="help16-tv-actions">
+          {articles.some(a => a.slug === "roku-delta-qr") && <button type="button" onClick={() => openGuide("roku-delta-qr")}>Usar QR Code</button>}
+          {articles.some(a => a.slug === "roku-delta-controle") && <button type="button" onClick={() => openGuide("roku-delta-controle")}>Configurar pelo controle</button>}
+          {articles.some(a => a.slug === "roku-white-label-login") && <button type="button" onClick={() => openGuide("roku-white-label-login")}>App com marca própria</button>}
+        </div></div>}
         <div className="help15-categories">{categories.map(c => <button key={c} type="button" className={category === c ? "active" : ""} onClick={() => { setCategory(c); setSelected(null); }}>{c}</button>)}</div>
-        {selectedArticle && <article className="help15-reader" id="help15-reader"><div className="help15-reader-title"><div><span className="help15-overline">GUIA DE APRENDIZADO</span><h3>{selectedArticle.title}</h3></div><button type="button" onClick={() => setSelected(null)} aria-label="Fechar leitura">×</button></div>
+        {selectedArticle && <article className="help15-reader" id="help15-reader"><div className="help15-reader-title"><div><span className="help15-overline">GUIA DETALHADO</span><h3>{selectedArticle.title}</h3></div><button type="button" onClick={() => setSelected(null)} aria-label="Fechar leitura">×</button></div>
           {selectedArticle.imageUrl && <img loading="lazy" alt={`Ilustração do guia ${selectedArticle.title}`} src={selectedArticle.imageUrl} />}
-          {shortText(selectedArticle.body).map((p, i) => <p key={i}>{p}</p>)}
+          {textLines(selectedArticle.body).map((p, i) => <p key={i}>{p}</p>)}
+          {selectedArticle.category === "Configurar TV" && <TvGuideVisual slug={selectedArticle.slug} />}
           {selectedArticle.videoUrl && <p><a href={selectedArticle.videoUrl} target="_blank" rel="noopener noreferrer">▶ Assistir ao vídeo do tutorial</a></p>}
-          {selectedArticle.steps?.length > 0 && <button type="button" className="help15-primary" onClick={() => begin(selectedArticle)}>Iniciar passo a passo</button>}
+          {stepCount(selectedArticle) > 0 && <><div className="help16-guide-head"><h4>Etapas do treinamento</h4><span>{percent(selectedArticle, progressMap[selectedArticle.id])}% concluído</span></div><StepChecklist article={selectedArticle} progress={progressMap[selectedArticle.id]} startAt={index => void begin(selectedArticle, index)} /><button type="button" className="help15-primary" onClick={() => void begin(selectedArticle)}>{progressMap[selectedArticle.id]?.completedAt ? "Repetir treinamento" : "Iniciar ou continuar passo a passo"}</button></>}
         </article>}
         <div className="help15-grid">{filtered.map(article => { const progress = progressMap[article.id]; return <article key={article.id} className={`help15-card ${selected === article.id ? "help15-active" : ""}`}>
           <div className="help15-kicker"><span>{article.category}</span>{progress?.completedAt && <span className="help15-done">✓ Concluído</span>}</div>
-          <h3>{article.title}</h3><p>{article.summary}</p>
-          {progress && <div className="help15-progress" aria-label={`Progresso ${progressPercent(article, progress)}%`}><div style={{ width: `${progressPercent(article, progress)}%` }}/></div>}
-          <div className="help15-actions"><button type="button" onClick={() => setSelected(s => s === article.id ? null : article.id)}>{selected === article.id ? "Fechar" : "Ler guia"}</button><button type="button" className="help15-primary" onClick={() => begin(article)}>{article.steps?.length ? (progress && !progress.completedAt ? "Continuar tutorial" : "Iniciar tutorial") : "Concluir leitura"}</button></div>
+          <h3>{article.title}</h3><p>{article.summary}</p><small className="help16-step-count">{stepCount(article)} etapas de aprendizado</small>
+          {progress && <div className="help15-progress" aria-label={`Progresso ${percent(article, progress)}%`}><div style={{ width: `${percent(article, progress)}%` }}/></div>}
+          <div className="help15-actions"><button type="button" onClick={() => setSelected(s => s === article.id ? null : article.id)}>{selected === article.id ? "Fechar" : "Ler guia detalhado"}</button><button type="button" className="help15-primary" onClick={() => void begin(article)}>{progress && !progress.completedAt ? "Continuar" : "Iniciar"}</button></div>
         </article>; })}</div>
         {!filtered.length && <div className="help15-empty">Nenhum guia encontrado com esses filtros.</div>}
-
       </>}
     </section>}
     {welcome && <div className="help15-modal-cover" role="presentation"><section role="dialog" aria-modal="true" aria-labelledby="help15-welcome-title" className="help15-welcome">
-      <span className="help15-overline">BEM-VINDO AO DELTATV</span><div className="help15-welcome-icon" aria-hidden="true">?</div>
-      <h2 id="help15-welcome-title">Conheça sua plataforma</h2><p>Um guia rápido vai mostrar onde estão as funções principais. Você pode pular agora e recomeçar quando quiser na Central de Ajuda.</p>
+      <span className="help15-overline">BEM-VINDO AO DELTATV</span><div className="help15-welcome-icon" aria-hidden="true">?</div><h2 id="help15-welcome-title">Vamos conhecer seu painel?</h2><p>O guia destaca as opções reais, explica cada ação e marca seu progresso. Também há um tutorial para instalar/configurar o aplicativo na TV.</p>
       <div className="help15-actions"><button type="button" onClick={() => void markWelcome()}>Agora não</button><button type="button" className="help15-primary" onClick={() => { const starter = articles.find(a => a.slug === "primeiros-passos") || articles.find(a => a.isOnboarding); void markWelcome(); void begin(starter); }}>Começar tour</button></div>
     </section></div>}
-    {tour && currentStep && <div className="help15-tour" role="dialog" aria-modal="true" aria-label="Tutorial guiado">
-      <div className="help15-tour-scrim" style={focusRect ? { background: "transparent" } : undefined}/>
-      {focusRect && <div className="help15-highlight" style={focusRect} aria-hidden="true" />}
-      <div className="help15-tour-popover"><div className="help15-tour-progress"><span>TUTORIAL · {tour.index + 1} / {tour.article.steps.length}</span><button type="button" onClick={exitTour} aria-label="Sair do tutorial">×</button></div>
+    {tour && currentStep && <div className="help15-tour" role="dialog" aria-modal="false" aria-label="Tutorial guiado">
+      {focusRect && !isExternalStep && <div className="help15-highlight" style={focusRect} aria-hidden="true" />}
+      <div className="help15-tour-popover"><div className="help15-tour-progress"><span>{isExternalStep ? "📺 NA TV / CELULAR" : "◎ NO SEU PAINEL"} · ETAPA {tour.index + 1}/{stepCount(tour.article)}</span><button type="button" onClick={exitTour} aria-label="Sair do tutorial">×</button></div>
         <h3>{currentStep.title}</h3><p>{currentStep.body}</p>
-        {currentStep.target && <p className="help15-location">📍 {friendly[currentStep.target] || "Navegação"}</p>}
-        <div className="help15-actions"><button type="button" onClick={exitTour}>Sair</button>{tour.index > 0 && <button type="button" onClick={() => void advance(-1)}>Anterior</button>}<button type="button" className="help15-primary" disabled={busy} onClick={() => void advance(1)}>{tour.index === tour.article.steps.length - 1 ? "Concluir" : "Próxima etapa"}</button></div>
+        {currentStep.tip && <div className="help16-tip"><strong>Como conferir:</strong> {currentStep.tip}</div>}
+        {!isExternalStep && currentStep.target && <p className="help15-location">{targetClicked ? "✓ Você clicou na opção marcada" : targetFound && focusRect ? `◉ Opção destacada: ${TARGET_NAMES[currentStep.target] || "Menu"}. Clique nela para praticar.` : `◌ Opção: ${TARGET_NAMES[currentStep.target] || "Menu"}. Ela pode estar oculta pelo tamanho da tela ou pelas permissões da conta.`}</p>}
+        {isExternalStep && <p className="help15-location">Esta ação acontece fora do painel. Faça na sua Roku ou no celular e depois marque a etapa como concluída.</p>}
+        <ol className="help16-tour-steps" aria-label="Progresso das etapas">{tour.article.steps.map((step, i) => <li key={i} className={i < tour.index ? "done" : i === tour.index ? "current" : ""} title={step.title}>{i < tour.index ? "✓" : i + 1}</li>)}</ol>
+        {error && <p role="alert" className="help15-error">{error}</p>}
+        <div className="help15-actions"><button type="button" onClick={exitTour}>Sair</button>{tour.index > 0 && <button type="button" onClick={() => { setTour(t => ({ ...t, index: t.index - 1 })); setTargetClicked(false); }}>Anterior</button>}<button type="button" className="help15-primary" disabled={busy} onClick={() => void advance()}>{busy ? "Salvando…" : tour.index === stepCount(tour.article) - 1 ? "✓ Concluir treinamento" : "✓ Marcar feita e continuar"}</button></div>
       </div>
     </div>}
   </>;
