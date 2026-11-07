@@ -14,7 +14,7 @@ export default function Codes() {
   return (
     <>
       {isReseller && <p className="muted">Cada código é atrelado a uma licença do seu estoque: quando um cliente ativa a TV com ele, 1 licença daquela duração é usada e o prazo começa a contar.</p>}
-      <div className="actions left"><button className="btn primary" onClick={() => setNewCode(true)}>Novo código</button></div>
+      <div className="actions left"><button className="btn primary" data-help-target="new-code" onClick={() => setNewCode(true)}>Novo código</button></div>
       <Table><thead><tr><th>Código</th><th>Servidor</th>{isReseller && <th>Licença</th>}<th>Status</th><th>Ativações</th><th /></tr></thead><tbody>{codes.map((c) => (
         <tr key={c.id}>
           <td><strong>{c.code}</strong></td>

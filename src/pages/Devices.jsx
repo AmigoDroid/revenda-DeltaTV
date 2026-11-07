@@ -39,7 +39,7 @@ export default function Devices() {
       <section>
         <div className="section-head">
           <h3>{isReseller ? "Ativações" : "Meus dispositivos"}</h3>
-          <input placeholder="Pesquisar por MAC" aria-label="Pesquisar por MAC" value={q} onChange={(e) => setQ(e.target.value)} />
+          <input data-help-target="search-device" placeholder="Pesquisar por MAC" aria-label="Pesquisar por MAC" value={q} onChange={(e) => setQ(e.target.value)} />
           <select value={devices.params.online} onChange={(e) => devices.filter({ online: e.target.value })} aria-label="Conexão">
             <option value="">Online e offline</option><option value="true">Só online</option><option value="false">Só offline</option>
           </select>

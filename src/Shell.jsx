@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { logout } from "./api.js";
 import { Icon, Mark } from "./icons.jsx";
 import { PortalProvider, usePortal } from "./portal.jsx";
@@ -20,6 +20,7 @@ import Notifications from "./pages/Notifications.jsx";
 import { api } from "./api.js";
 import ProfilePage from "./ProfilePage.jsx";
 import ServerHealthAlert from "./ServerHealthAlert.jsx";
+import HelpExperience from "./HelpExperience.jsx";
 
 // Cada item vira uma página. `reseller`: só aparece para quem revende licenças.
 const NAV = [
@@ -39,6 +40,7 @@ const NAV = [
   { id: "loginhistory", label: "Histórico de login", icon: "history", page: LoginHistory, desc: "Veja seus acessos, IPs e dispositivos." },
   { id: "financeiro", label: "Financeiro", icon: "wallet", page: Billing, desc: "Mensalidades da parceria e pagamentos por Pix." },
   { id: "conta", label: "Minha conta", icon: "user", page: ProfilePage, desc: "Dados pessoais, segurança, sessões, histórico e notificações." },
+  { id: "ajuda", label: "Central de Ajuda", icon: "help", page: null, desc: "Guias e tutoriais interativos do painel." },
 ];
 // Menu por área: o dia a dia (clientes e TVs), o que vende (licenças), a ativação (códigos e servidores) e a conta.
 const GROUPS = [
@@ -46,9 +48,12 @@ const GROUPS = [
   { label: "Atendimento", ids: ["clientes", "dispositivos"] },
   { label: "Licenças", ids: ["estoque", "creditos", "licencas"] },
   { label: "Ativação", ids: ["codigos", "playerweb", "servidores", "monitoramento", "white-label", "aplicativos"] },
-  { label: "Conta", ids: ["financeiro", "notificacoes", "loginhistory", "conta"] },
+  { label: "Conta", ids: ["financeiro", "notificacoes", "loginhistory", "conta", "ajuda"] },
 ];
-const ACCOUNT = [{ id: "conta", label: "Minha conta", icon: "user", page: ProfilePage, desc: "Seu perfil e a segurança da conta." }];
+const ACCOUNT = [
+  { id: "conta", label: "Minha conta", icon: "user", page: ProfilePage, desc: "Seu perfil e a segurança da conta." },
+  { id: "ajuda", label: "Central de Ajuda", icon: "help", page: null, desc: "Tutoriais de ajuda." },
+];
 const readRoute = () => (location.hash.startsWith("#/") ? location.hash.slice(2) : "inicio");
 
 /** Menu de perfil no cabeçalho, equivalente ao painel administrativo. */
@@ -124,7 +129,7 @@ function Layout({ user }) {
   const blocked = !!me && me.effectiveStatus !== "active"; // cadastro em análise, suspenso ou vencido: só o aviso
   const items = blocked ? ACCOUNT : NAV.filter((n) => !n.reseller || isReseller);
   const cur = items.find((n) => n.id === route) || items[0];
-  const go = (id) => { location.hash = `/${id}`; setOpen(false); window.scrollTo(0, 0); };
+  const go = useCallback((id) => { location.hash = `/${id}`; setOpen(false); window.scrollTo(0, 0); }, []);
   const Page = cur.page;
   const title = cur.id === "inicio" ? `Olá, ${(user.name || "").split(" ")[0] || "revendedor"}` : cur.label;
   const badge = { clientes: summary?.overdue, notificacoes: notificationCount };
@@ -144,7 +149,7 @@ function Layout({ user }) {
               <div className="nav-group" key={g.label || "top"}>
                 {g.label && <div className="nav-heading">{g.label}</div>}
                 {list.map((n) => (
-                  <button key={n.id} className={`nav ${n.id === cur.id ? "active" : ""}`} aria-current={n.id === cur.id ? "page" : undefined} onClick={() => go(n.id)}>
+                  <button key={n.id} className={`nav ${n.id === cur.id ? "active" : ""}`} aria-current={n.id === cur.id ? "page" : undefined} data-help-target={({ inicio: "home", ajuda: "help", conta: "profile", servidores: "servers", codigos: "codes", dispositivos: "devices", licencas: "licenses", financeiro: "billing", "white-label": "apps", notificacoes: "notifications" })[n.id] || undefined} onClick={() => go(n.id)}>
                     <Icon name={n.icon} /><span>{n.label}</span>{showBadge && badge[n.id] > 0 && <b className="count">{badge[n.id]}</b>}
                   </button>
                 ))}
@@ -163,6 +168,7 @@ function Layout({ user }) {
           <button type="button" className="icon menu-btn" aria-label="Abrir menu" aria-expanded={open} onClick={() => setOpen(true)}><Icon name="menu" size={22} /></button>
           <div className="topbar-context"><span className="topbar-eyebrow">PAINEL DA REVENDA</span><strong className="topbar-title">{cur.label}</strong></div>
           <div className="topbar-tools">
+            <button type="button" className="btn sm" onClick={() => window.dispatchEvent(new CustomEvent("deltatv-help-context", { detail: { screen: cur.id } }))}>? Ajuda</button>
             {!blocked && <button type="button" className="topbar-notify" aria-label={notificationCount > 0 ? `${notificationCount} notificações não lidas` : "Abrir notificações"} title="Notificações" onClick={() => go("notificacoes")}>
               <Icon name="bell" size={19}/>{showBadge && notificationCount > 0 && <span className="topbar-notify-count">{notificationCount > 99 ? "99+" : notificationCount}</span>}
             </button>}
@@ -175,11 +181,12 @@ function Layout({ user }) {
           <div className="unread-banner-copy"><strong>{notificationCount === 1 ? "Você tem 1 mensagem não lida" : `Você tem ${notificationCount} mensagens não lidas`}</strong><span>Há comunicados da Delta TV aguardando sua leitura.</span></div>
           <button type="button" className="btn primary" onClick={() => go("notificacoes")}>Ler mensagens <Icon name="arrow-right" size={15}/></button>
         </div>}
-        <main className="content" key={cur.id}>
+        <main className="content">
           <header className="page-title">
             <div className="page-title-copy"><span className="page-eyebrow">DELTA TV <span>/</span> {cur.label.toUpperCase()}</span><h1>{title}</h1>{cur.desc && <p className="muted">{cur.desc}</p>}</div>
           </header>
-          <Page go={go} user={user} />
+          <HelpExperience screen={cur.id} portal="reseller" userId={user.id} onNavigate={go}/>
+          {Page && <Page go={go} user={user} />}
         </main>
       </div>
     </div>
