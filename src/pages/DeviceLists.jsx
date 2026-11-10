@@ -1,3 +1,5 @@
+import { useState } from "react";
+import ConnectionAudit from "../ConnectionAudit.jsx";
 import { Badge, Table, fmtDateTime, RowMenu } from "../ui.jsx";
 
 // Estados de UMA lista (ativação) do dispositivo, como o servidor devolve em `activations[].status`.
@@ -27,10 +29,12 @@ export const livesOf = (device) => device?.activations ?? [];
 export const hasLicenseList = (device) => livesOf(device).some((l) => l.kind === "license");
 
 export default function DeviceLists({ device, onRemove }) {
+  const [auditId,setAuditId]=useState(null);
   const lists = livesOf(device);
   if (!lists.length) return <p className="muted">Nenhuma lista vinculada a este MAC.</p>;
   return (
     <>
+      {auditId&&<ConnectionAudit path={`/partner/devices/${auditId}/connection-audit`} onClose={()=>setAuditId(null)}/>}
       <h4 style={{ marginTop: 12 }}>Listas deste MAC ({lists.length})</h4>
       <Table>
         <thead><tr><th>Tipo</th><th>Lista</th><th>Situação</th><th>Expira em</th><th /></tr></thead>
@@ -45,6 +49,7 @@ export default function DeviceLists({ device, onRemove }) {
               </td>
               <td>{l.expiresAt ? fmtDateTime(l.expiresAt) : "—"}</td>
               <td className="actions">
+              <button className="btn" onClick={()=>setAuditId(l.activationId)}>Conexão / URL</button>
               <RowMenu items={onRemove ? [
                 { label: "Remover", danger: true, onClick: () => onRemove(l) },
               ] : []} />
