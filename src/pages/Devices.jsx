@@ -44,11 +44,11 @@ export default function Devices() {
             <option value="">Online e offline</option><option value="true">Só online</option><option value="false">Só offline</option>
           </select>
         </div>
-        <Table><thead><tr><th>MAC</th><th>Tipo</th><th>Conexão</th><th>Status</th><th>Licença vence em</th><th>Ativado em</th><th /></tr></thead><tbody>{devices.data.map((a) => {
+        <Table><thead><tr><th>MAC</th><th>Tipo</th><th>Conexão</th><th>Assistindo / IP</th><th>Status</th><th>Licença vence em</th><th>Ativado em</th><th /></tr></thead><tbody>{devices.data.map((a) => {
           const lic = a.grantedLicense;
           const live = !!lic && lic.status === "active" && lic.remainingDays > 0;
           return (
-            <tr key={a.id}><td className="mono">{a.mac || "—"}</td><td><PlatformBadge platform={a.platform} /></td><td><OnlineBadge online={a.online} lastSeenAt={a.lastSeenAt} /></td><td><Badge status={accessStatus(a)} /></td>
+            <tr key={a.id}><td className="mono">{a.mac || "—"}</td><td><PlatformBadge platform={a.platform} /></td><td><OnlineBadge online={a.online} lastSeenAt={a.lastSeenAt} /></td><td><strong>{a.live?.playback?.title || '—'}</strong><div className="muted">{a.live?.online ? `IP: ${a.live.ip || 'indisponível'}` : 'Sem telemetria'}</div></td><td><Badge status={accessStatus(a)} /></td>
               <td>{lic ? <>{fmtDate(lic.expiresAt)} <span className="muted">({live ? `${lic.remainingDays} dia(s)` : lic.status === "active" ? "vencida" : lic.status})</span></> : "—"}</td>
               <td>{fmtDateTime(a.activatedAt)}</td><td className="actions">
                 <RowMenu items={[

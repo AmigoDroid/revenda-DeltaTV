@@ -95,6 +95,9 @@ export default function ServerMonitorView({ scope = "admin" }) {
               <div><span>Resposta HTTP</span><strong>{server.healthStatus === "unknown" || server.healthStatus === "disabled" || server.latencyMs == null ? "—" : `${server.latencyMs} ms`}</strong></div>
               <div><span>Prioridade manual</span><strong>{server.priority ?? "—"}</strong></div>
             </div>
+            <div className="srv-item-metrics srv-availability">
+              {['24h','7d','30d'].map(period=><div key={period}><span>Disponibilidade HTTP {period}</span><strong>{server.availability?.[period]?.percent == null ? 'Sem dados' : `${server.availability[period].percent.toLocaleString('pt-BR')}%`}</strong><small>{server.availability?.[period]?.samples || 0} testes</small></div>)}
+            </div>
             <div className="srv-item-footer"><div><span>Última verificação</span><strong>{date(server.lastCheckedAt)}</strong></div><div><span>Último sucesso</span><strong>{date(server.lastGoodAt)}</strong></div></div>
             {server.healthStatus === "down" || server.healthStatus === "suspect" ? <div className="srv-incident">{server.lastError || "Resposta fora do limite configurado."}</div> : null}
           </article>)}
@@ -104,7 +107,7 @@ export default function ServerMonitorView({ scope = "admin" }) {
           <div className="srv-pagination"><button className="btn sm" disabled={!data || page <= 1 || loading} onClick={() => setPage((p) => Math.max(1, p - 1))}>Anterior</button><button className="btn sm" disabled={!data || page >= data.pages || loading} onClick={() => setPage((p) => p + 1)}>Próxima</button></div>
         </div>
       </section>
-      <p className="srv-footnote srv-note">A latência é medida da VPS até a API HTTP do servidor, não da TV. A indicação de saúde não garante que todos os canais estejam reproduzindo.</p>
+      <p className="srv-footnote srv-note">Disponibilidade baseada nas respostas HTTP das sondagens; não representa SLA de reprodução e pode mudar conforme a cobertura das medições. A latência é medida da VPS até a API HTTP do servidor, não da TV. A indicação de saúde não garante que todos os canais estejam reproduzindo.</p>
     </div>
   );
 }

@@ -46,6 +46,7 @@ export default function DeviceLists({ device, onRemove }) {
               <td className="wrap">
                 <Badge status={tone(l)} label={STATE[l.status] || l.status} />
                 {!l.allowed && l.message && <div className="muted">{l.message}</div>}
+                {l.live?.online && <div className="muted">IP: {l.live.ip || 'indisponível'} · {l.live.playback?.title ? `Assistindo: ${l.live.playback.title}` : 'Sem reprodução ativa'}</div>}
               </td>
               <td>{l.expiresAt ? fmtDateTime(l.expiresAt) : "—"}</td>
               <td className="actions">
