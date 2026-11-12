@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import ExpiryNoticeSettings from "./ExpiryNoticeSettings.jsx";
 import { api } from "../api.js";
 import { usePortal } from "../portal.jsx";
 import { NewWebAccess } from "./WebAccess.jsx";
@@ -80,6 +81,7 @@ export default function Clients() {
   const s = summary.data;
   return (
     <section>
+      {isReseller && <ExpiryNoticeSettings />}
       <div className="actions left"><button className="btn primary" onClick={() => setEdit({ mac: "", isNew: true })}>Adicionar cliente</button></div>
       {s && (
         <div className="grid cards">
