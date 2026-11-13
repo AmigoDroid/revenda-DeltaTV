@@ -43,7 +43,7 @@ export default function App() {
     return () => window.removeEventListener("auth-changed", h);
   }, []);
   // Preserva os links de cadastro e recuperação mesmo após recarregar a tela.
-  const currentView = () => location.hash === "#cadastro" ? "register" : location.hash === "#esqueci-senha" ? "forgot" : "login";
+  const currentView = () => location.hash.startsWith("#cadastro") ? "register" : location.hash === "#esqueci-senha" ? "forgot" : "login";
   const [view, setView] = useState(currentView);
   const [forgotEmail, setForgotEmail] = useState("");
   useEffect(() => {
@@ -52,7 +52,7 @@ export default function App() {
     return () => window.removeEventListener("hashchange", syncView);
   }, []);
   const show = (next) => {
-    const hash = next === "register" ? "#cadastro" : next === "forgot" ? "#esqueci-senha" : "";
+    const hash = next === "register" ? (location.hash.startsWith("#cadastro?convite=") ? location.hash : "#cadastro") : next === "forgot" ? "#esqueci-senha" : "";
     if (location.hash !== hash) history.pushState(null, "", location.pathname + location.search + hash);
     setView(next);
   };

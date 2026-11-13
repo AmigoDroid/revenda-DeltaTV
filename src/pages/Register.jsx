@@ -1,10 +1,23 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { api } from "../api.js";
 import { registerReseller } from "../api.js";
 import { Field, PasswordInput, useAction } from "../ui.jsx";
 
 /** Tela pública de cadastro de revendedor. O cadastro fica aguardando aprovação da plataforma. */
 export default function Register({ onBack }) {
   const run = useAction();
+  const invitationToken = (()=>{
+    const fragment=window.location.hash.split("?")[1]||"";
+    return new URLSearchParams(fragment).get("convite") || new URLSearchParams(window.location.search).get("convite") || "";
+  })();
+  const [masterName,setMasterName]=useState("");
+  const [inviteError,setInviteError]=useState("");
+  useEffect(()=>{
+    if(!invitationToken)return;
+    api("/auth/network-invite/verify",{method:"POST",body:{token:invitationToken}})
+      .then(d=>setMasterName(d.masterName||"Master"))
+      .catch(e=>setInviteError(e.message||"Convite inválido"));
+  },[invitationToken]);
   const [f, setF] = useState({ contactName: "", email: "", phone: "", password: "", confirm: "", website: "" });
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
@@ -17,6 +30,7 @@ export default function Register({ onBack }) {
     if (!valid) return;
     setBusy(true);
     const { confirm, ...body } = f;
+    if(invitationToken)body.inviteToken=invitationToken;
     const r = await run(() => registerReseller(body));
     setBusy(false);
     if (r) setDone(true);
@@ -35,6 +49,8 @@ export default function Register({ onBack }) {
   return (
     <div className="login card">
       <h2 style={{ marginBottom: 16 }}>Cadastro de revendedor</h2>
+      {masterName&&<p style={{color:"var(--ok)"}}>Você está entrando para a rede de <strong>{masterName}</strong>.</p>}
+      {inviteError&&<p className="error" role="alert">{inviteError}. Solicite um novo convite ao Master.</p>}
       <form onSubmit={submit}>
         <Field label="Seu nome" hint="Nome completo, como você é conhecido pelos seus clientes."><input value={f.contactName} onChange={set("contactName")} maxLength={160} autoComplete="name" required /></Field>
         <Field label="E-mail" hint="Será o seu login."><input type="email" value={f.email} onChange={set("email")} maxLength={200} autoComplete="username" required /></Field>
@@ -44,7 +60,7 @@ export default function Register({ onBack }) {
         {mismatch && <p className="error">As senhas não são iguais.</p>}
         {/* Isca anti-robô: invisível para pessoas. Se preenchida, o servidor ignora o cadastro. */}
         <input name="website" value={f.website} onChange={set("website")} tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} />
-        <button className="btn primary" style={{ width: "100%" }} disabled={busy || !valid}>{busy ? "Enviando…" : "Criar cadastro"}</button>
+        <button className="btn primary" style={{ width: "100%" }} disabled={busy || !valid || !!inviteError || (!!invitationToken && !masterName)}>{busy ? "Enviando…" : "Criar cadastro"}</button>
       </form>
       <p style={{ marginTop: 16, textAlign: "center" }}><button className="btn sm" onClick={onBack}>Já tenho conta</button></p>
     </div>

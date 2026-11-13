@@ -5,7 +5,7 @@ import { buyWithCredit, creditChanged, creditsLabel } from "../credit.js";
 import { Empty, Field, LoadError, Pager, Table, fmtDateTime, fmtMoney, useAction, useList, useLoad, useUi } from "../ui.jsx";
 
 const monthsLabel = (m) => `${m} ${m === 1 ? "mês" : "meses"}`;
-const KIND = { topup: "Recarga por Pix", purchase: "Compra de licença", adjust: "Ajuste da plataforma" };
+const KIND = { topup: "Recarga por Pix", purchase: "Compra de licença", adjust: "Ajuste da plataforma", network_buy: "Compra ao Master", network_sale: "Venda à revenda" };
 
 function Recharge({ credit, onPaid }) {
   const run = useAction();
@@ -56,7 +56,7 @@ function BuyLicenses({ credit }) {
     return (
       <div className="card" style={{ marginTop: 12 }}>
         <h4 style={{ margin: "0 0 4px" }}>Comprar licenças com crédito</h4>
-        <p className="muted" style={{ margin: 0 }}>Nenhuma licença está à venda por crédito no momento. Fale com a plataforma.</p>
+        <p className="muted" style={{ margin: 0 }}>{credit.purchaseViaMaster ? "As suas licenças são vendidas pelo seu Master. Use Minha rede de revendas para comprar." : "Nenhuma licença está à venda por crédito no momento. Fale com a plataforma."}</p>
       </div>
     );
   }
@@ -114,7 +114,7 @@ function Ledger() {
             <td>{KIND[r.kind] || r.kind}</td>
             <td style={{ color: r.delta > 0 ? "var(--ok)" : undefined }}>{r.delta > 0 ? `+${r.delta}` : r.delta}</td>
             <td>{r.balanceAfter}</td>
-            <td className="wrap">{[r.kind === "purchase" ? `${r.quantity} × ${monthsLabel(r.months)} (${creditsLabel(r.unitPriceCredits)} cada)` : null, r.kind === "topup" && r.rateCents ? `1 crédito = ${fmtMoney(r.rateCents)}` : null, r.kind === "adjust" ? r.note : null].filter(Boolean).join(" · ") || "—"}</td>
+            <td className="wrap">{[r.kind === "purchase" ? `${r.quantity} × ${monthsLabel(r.months)} (${creditsLabel(r.unitPriceCredits)} cada)` : null, r.kind === "topup" && r.rateCents ? `1 crédito = ${fmtMoney(r.rateCents)}` : null, ["adjust", "network_buy", "network_sale"].includes(r.kind) ? r.note : null].filter(Boolean).join(" · ") || "—"}</td>
           </tr>))}</tbody>
       </Table>
       <Empty loading={list.loading} error={list.error} count={list.data.length} />
