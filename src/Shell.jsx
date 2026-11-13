@@ -3,6 +3,9 @@ import { logout } from "./api.js";
 import { Icon, Mark } from "./icons.jsx";
 import { PortalProvider, usePortal } from "./portal.jsx";
 import Home from "./pages/Home.jsx";
+import { useSimpleMode } from "./useSimpleMode.js";
+import { EasyPageGuide } from "./EasyStart.jsx";
+import "./easy-start.css";
 import WhiteLabelApps from "./WhiteLabelApps.jsx";
 import Clients from "./pages/Clients.jsx";
 import SupportCenter from "./SupportCenter.jsx";
@@ -26,7 +29,7 @@ import HelpExperience from "./HelpExperience.jsx";
 // Cada item vira uma página. `reseller`: só aparece para quem revende licenças.
 const NAV = [
   { id: "inicio", label: "Início", icon: "home", page: Home, desc: "O que precisa da sua atenção hoje." },
-  { id: "suporte", label: "Atendimento simples", icon: "help", page: SupportCenter, desc: "Diagnostique um cliente sem interpretar logs ou códigos técnicos." },
+  { id: "suporte", label: "Resolver problema da TV", icon: "help", page: SupportCenter, desc: "Diagnostique um cliente sem interpretar logs ou códigos técnicos." },
   { id: "clientes", label: "Clientes", icon: "users", page: Clients, reseller: true, desc: "Nome, contato, valor e vencimento de cada TV. Cadastre um MAC antes de ativar ou complete os dados de uma TV já ativada." },
   { id: "dispositivos", label: "Dispositivos", icon: "tv", page: Devices, desc: "Busque uma TV pelo MAC, edite as listas dela e gerencie as ativações." },
   { id: "estoque", label: "Estoque", icon: "box", page: StockPortal, reseller: true, desc: "Licenças disponíveis. Aplique ao MAC de um cliente (em Dispositivos) ou transfira para outro revendedor." },
@@ -45,6 +48,7 @@ const NAV = [
   { id: "ajuda", label: "Central de Ajuda", icon: "help", page: null, desc: "Guias e tutoriais interativos do painel." },
 ];
 // Menu por área: o dia a dia (clientes e TVs), o que vende (licenças), a ativação (códigos e servidores) e a conta.
+const SIMPLE_RESELLER = new Set(["inicio", "suporte", "clientes", "dispositivos", "estoque", "codigos", "notificacoes", "ajuda", "conta"]);
 const GROUPS = [
   { label: null, ids: ["inicio"] },
   { label: "Atendimento", ids: ["suporte", "clientes", "dispositivos"] },
@@ -95,6 +99,7 @@ function Layout({ user }) {
   const { me, isReseller, summary } = usePortal();
   const [route, setRoute] = useState(readRoute);
   const [open, setOpen] = useState(false);
+  const [simpleMode, setSimpleMode] = useSimpleMode("revenda");
   // Permite que o tour mostre as opções que ficam na gaveta de navegação móvel.
   useEffect(() => { const openForHelp = () => setOpen(true); window.addEventListener("deltatv-help-open-menu", openForHelp); return () => window.removeEventListener("deltatv-help-open-menu", openForHelp); }, []);
   const [notificationCount, setNotificationCount] = useState(0);
@@ -144,10 +149,11 @@ function Layout({ user }) {
         <div className="brand"><span className="brand-icon"><Mark size={38} /></span><div><strong>Delta<span>TV</span></strong><small>PAINEL DA REVENDA</small></div>
           <button className="icon sidebar-close" type="button" aria-label="Fechar menu" onClick={() => setOpen(false)}><Icon name="x" size={20}/></button>
         </div>
+        <button type="button" className="easy-mode-button" aria-pressed={!simpleMode} onClick={() => setSimpleMode((v) => !v)}>{simpleMode ? "⚙ Mostrar todas as opções" : "✓ Usar menu simples"}</button>
         <div className="sidebar-context"><span className="sidebar-context-dot" /> <span>Área de trabalho</span><span className="sidebar-context-mark">Revenda</span></div>
         <nav aria-label="Principal">
           {GROUPS.map((g) => {
-            const list = items.filter((n) => g.ids.includes(n.id));
+            const list = items.filter((n) => g.ids.includes(n.id) && (!simpleMode || SIMPLE_RESELLER.has(n.id) || n.id === cur.id));
             if (!list.length) return null;
             return (
               <div className="nav-group" key={g.label || "top"}>
@@ -172,6 +178,7 @@ function Layout({ user }) {
           <button type="button" className="icon menu-btn" aria-label="Abrir menu" aria-expanded={open} onClick={() => setOpen(true)}><Icon name="menu" size={22} /></button>
           <div className="topbar-context"><span className="topbar-eyebrow">PAINEL DA REVENDA</span><strong className="topbar-title">{cur.label}</strong></div>
           <div className="topbar-tools">
+            <button type="button" className="easy-mode-button" aria-pressed={!simpleMode} onClick={() => setSimpleMode((v) => !v)}>{simpleMode ? "Modo simples · mostrar tudo" : "Modo completo · simplificar"}</button>
             <button type="button" className="btn sm" data-help-target="context-help" onClick={() => window.dispatchEvent(new CustomEvent("deltatv-help-context", { detail: { screen: cur.id } }))}>? Ajuda</button>
             {!blocked && <button type="button" className="topbar-notify" aria-label={notificationCount > 0 ? `${notificationCount} notificações não lidas` : "Abrir notificações"} title="Notificações" onClick={() => go("notificacoes")}>
               <Icon name="bell" size={19}/>{showBadge && notificationCount > 0 && <span className="topbar-notify-count">{notificationCount > 99 ? "99+" : notificationCount}</span>}
@@ -189,6 +196,7 @@ function Layout({ user }) {
           <header className="page-title">
             <div className="page-title-copy"><span className="page-eyebrow">DELTA TV <span>/</span> {cur.label.toUpperCase()}</span><h1>{title}</h1>{cur.desc && <p className="muted">{cur.desc}</p>}</div>
           </header>
+          {simpleMode && cur.id !== "inicio" && <EasyPageGuide role="reseller" page={cur.id} onBack={() => go("inicio")} />}
           <HelpExperience screen={cur.id} portal="reseller" userId={user.id} onNavigate={go}/>
           {Page && <Page go={go} user={user} />}
         </main>
