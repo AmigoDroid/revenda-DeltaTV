@@ -5,6 +5,7 @@ import { PortalProvider, usePortal } from "./portal.jsx";
 import Home from "./pages/Home.jsx";
 import WhiteLabelApps from "./WhiteLabelApps.jsx";
 import Clients from "./pages/Clients.jsx";
+import SupportCenter from "./SupportCenter.jsx";
 import Devices from "./pages/Devices.jsx";
 import { StockPortal } from "./pages/Stock.jsx";
 import Licenses from "./pages/Licenses.jsx";
@@ -25,6 +26,7 @@ import HelpExperience from "./HelpExperience.jsx";
 // Cada item vira uma página. `reseller`: só aparece para quem revende licenças.
 const NAV = [
   { id: "inicio", label: "Início", icon: "home", page: Home, desc: "O que precisa da sua atenção hoje." },
+  { id: "suporte", label: "Atendimento simples", icon: "help", page: SupportCenter, desc: "Diagnostique um cliente sem interpretar logs ou códigos técnicos." },
   { id: "clientes", label: "Clientes", icon: "users", page: Clients, reseller: true, desc: "Nome, contato, valor e vencimento de cada TV. Cadastre um MAC antes de ativar ou complete os dados de uma TV já ativada." },
   { id: "dispositivos", label: "Dispositivos", icon: "tv", page: Devices, desc: "Busque uma TV pelo MAC, edite as listas dela e gerencie as ativações." },
   { id: "estoque", label: "Estoque", icon: "box", page: StockPortal, reseller: true, desc: "Licenças disponíveis. Aplique ao MAC de um cliente (em Dispositivos) ou transfira para outro revendedor." },
@@ -45,7 +47,7 @@ const NAV = [
 // Menu por área: o dia a dia (clientes e TVs), o que vende (licenças), a ativação (códigos e servidores) e a conta.
 const GROUPS = [
   { label: null, ids: ["inicio"] },
-  { label: "Atendimento", ids: ["clientes", "dispositivos"] },
+  { label: "Atendimento", ids: ["suporte", "clientes", "dispositivos"] },
   { label: "Licenças", ids: ["estoque", "creditos", "licencas"] },
   { label: "Ativação", ids: ["codigos", "playerweb", "servidores", "monitoramento", "white-label", "aplicativos"] },
   { label: "Conta", ids: ["financeiro", "notificacoes", "loginhistory", "conta", "ajuda"] },
