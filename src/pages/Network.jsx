@@ -5,10 +5,14 @@ import { usePortal } from "../portal.jsx";
 const prettyMonths = (m) => `${m} ${m===1?"mês":"meses"}`;
 const resourceLabels={servers:"Servidores IPTV",codes:"Códigos de ativação",devices:"Gerenciar TVs",clients:"Clientes",stock:"Estoque de licenças",credits:"Créditos e compras",web:"Player Web",white_label:"Aplicativos personalizados",remote:"Controle remoto"};
 const makeKey=()=>crypto.randomUUID();
+const waInvite=(url,name)=>`https://wa.me/?text=${encodeURIComponent(`Olá! Cadastre sua revenda DeltaTV na rede de ${name}: ${url}`)}`;
+const optionalNumber=value=>value===""?null:Number(value);
+const inviteDescription=i=>`${i.uses}/${i.maxUses==null?"sem limite":i.maxUses} cadastros · ${i.expiresAt?`vence ${new Date(i.expiresAt).toLocaleDateString("pt-BR")}`:"sem vencimento"}`;
 export default function Network() {
   const {me}=usePortal();
   const [network,setNetwork]=useState(null),[prices,setPrices]=useState([]),[invites,setInvites]=useState([]),[sales,setSales]=useState([]),[resources,setResources]=useState(null),[tree,setTree]=useState([]),[summary,setSummary]=useState(null);
   const [errors,setErrors]=useState(""),[message,setMessage]=useState(""),[busy,setBusy]=useState(false),[newLink,setNewLink]=useState("");
+  const [inviteUses,setInviteUses]=useState(""),[inviteDays,setInviteDays]=useState("");
   const [newOffer,setNewOffer]=useState({months:"12",priceCredits:"10"});
   const [order,setOrder]=useState({months:"",quantity:"1"});
   const [childId,setChildId]=useState(null),[childResources,setChildResources]=useState(null);
@@ -57,7 +61,7 @@ export default function Network() {
   const master=network.account.distributionRole==="master";
   const price=network.offers.find(p=>String(p.months)===String(order.months))||network.offers[0];
   const quantity=Number(order.quantity),total=(price?.priceCredits||0)*quantity;
-  const creditOk=quantity>0&&quantity<=100&&Number.isInteger(quantity)&&total<=Number(network.creditBalance);
+  const creditOk=quantity>0&&Number.isSafeInteger(quantity)&&Number.isSafeInteger(total)&&total<=Number(network.creditBalance);
   const savePrice=()=>run(()=>api("/partner/network/prices",{method:"PUT",body:{months:Number(newOffer.months),priceCredits:Number(newOffer.priceCredits),active:true}}),"Preço salvo para as suas revendas.");
   const buy=async()=>{
     if(busy||purchaseInFlight.current)return;
@@ -87,15 +91,19 @@ export default function Network() {
     finally{setBusy(false);}
   };
   const invite=async()=>{
-    const r=await run(()=>api("/partner/network/invites",{method:"POST",body:{daysValid:30,maxUses:50}}),"Link criado. Compartilhe com seus revendedores.");
+    const r=await run(()=>api("/partner/network/invites",{method:"POST",body:{daysValid:optionalNumber(inviteDays),maxUses:optionalNumber(inviteUses)}}),"Link criado. Compartilhe com seus revendedores.");
     if(r)setNewLink(r.url);
+  };
+  const copyInvite=async()=>{
+    try{await navigator.clipboard.writeText(newLink);setMessage("Link copiado. Agora envie para a pessoa que deseja cadastrar.");}
+    catch{window.prompt("Copie o link para enviar:",newLink);}
   };
   const updateChild=async(id,verb)=>run(()=>api(`/partner/network/children/${id}/${verb}`,{method:"POST",body:{}}),verb==="approve"?"Cadastro aprovado.":"Revenda suspensa.");
   const promoteChild=async(id)=>{
     if(!window.confirm("Promover esta revenda a Submaster? Ela poderá criar uma rede subordinada dentro dos seus limites."))return;
     const p=network.policy;
     await run(()=>api(`/partner/network/children/${id}/promote`,{method:"POST",body:{policy:{
-      canInvite:p.canInvite,canSell:p.canSell,canPromote:false,maxChildren:Math.min(100,p.maxChildren),maxDepth:p.maxDepth,
+      canInvite:p.canInvite,canSell:p.canSell,canPromote:false,maxChildren:p.maxChildren,maxDepth:p.maxDepth,
     }}}),"Revenda promovida a Submaster.");
   };
   const updateResource=async(resource,enabled,limit)=>{
@@ -114,7 +122,7 @@ export default function Network() {
       <p className="muted">O pagamento usa seu saldo de créditos. O estoque e o extrato são atualizados juntos, sem cobrança duplicada.</p>
       {network.offers.length?<div className="row" style={{gap:12,alignItems:"end",flexWrap:"wrap"}}>
         <label>Duração<select disabled={!!pendingPurchase||busy} value={price?.months||""} onChange={e=>setOrder(v=>({...v,months:e.target.value}))}>{network.offers.map(p=><option key={p.months} value={p.months}>{prettyMonths(p.months)} — {p.priceCredits} créditos</option>)}</select></label>
-        <label>Quantidade<input disabled={!!pendingPurchase||busy} type="number" min="1" max="100" value={order.quantity} onChange={e=>setOrder(v=>({...v,quantity:e.target.value}))}/></label>
+        <label>Quantidade<input disabled={!!pendingPurchase||busy} type="number" min="1" value={order.quantity} onChange={e=>setOrder(v=>({...v,quantity:e.target.value}))}/></label>
         <strong>Total: {total} créditos</strong>
         <button className="btn primary" disabled={busy||(!pendingPurchase&&!creditOk)} onClick={()=>{if(pendingPurchase||window.confirm(`Comprar ${quantity} licença(s) por ${total} créditos?`))buy();}}>{pendingPurchase?"Repetir compra pendente":"Comprar licenças"}</button>
         {pendingPurchase&&<div role="status" style={{width:"100%",display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
@@ -131,14 +139,24 @@ export default function Network() {
          {treeTotal>100&&<div className="row" style={{gap:8}}><button className="btn sm" disabled={treePage<=1} onClick={()=>setTreePage(p=>p-1)}>Anterior</button><span>{treePage} / {Math.ceil(treeTotal/100)}</span><button className="btn sm" disabled={treePage*100>=treeTotal} onClick={()=>setTreePage(p=>p+1)}>Próxima</button></div>}
        </details>
       </div>}
-      {network.policy.canInvite&&<div className="card"><h3>Convidar revendas</h3>
-        <p className="muted">Gere um link para sua rede. Os novos cadastros ficam aguardando aprovação; eles não recebem automaticamente privilégios de Master.</p>
-        <button className="btn primary" disabled={busy||!network.policy.canInvite} onClick={invite}>Criar link de convite</button>
-        {newLink&&<div style={{marginTop:12,display:"flex",gap:8,flexWrap:"wrap"}}><input readOnly aria-label="Link para convidar revendas" value={newLink} style={{flex:"1 1 250px"}}/><button className="btn" onClick={()=>navigator.clipboard.writeText(newLink).then(()=>setMessage("Link copiado.")).catch(()=>setErrors("Selecione o link para copiar."))}>Copiar link</button></div>}
-        {invites.length>0&&<details style={{marginTop:12}}><summary>Convites recentes ({invites.length})</summary><ul>{invites.map(i=><li key={i.id}>{i.uses}/{i.maxUses} cadastros · vence {new Date(i.expiresAt).toLocaleDateString("pt-BR")} {i.revokedAt?"— revogado":<button className="btn sm" disabled={busy} onClick={()=>run(()=>api(`/partner/network/invites/${i.id}/revoke`,{method:"POST"}),"Convite revogado.")}>Revogar</button>}</li>)}</ul></details>}
+      {master&&!network.policy.canInvite&&<div className="card"><h3>Convites não habilitados</h3><p className="muted">Sua conta é Master, mas o Superadmin ainda não ativou a permissão de convidar revendas. Peça para habilitar “Criar convites e aprovar revendas” em Rede de distribuição.</p></div>}
+      {network.policy.canInvite&&<div className="card"><h3>Convidar revendedor</h3>
+        <p className="muted">1. Gere seu convite. 2. Compartilhe pelo WhatsApp. 3. A pessoa faz o cadastro e entra automaticamente na sua rede com recursos básicos. Não precisa aprovar manualmente.</p>
+        <div className="row" style={{gap:12,alignItems:"end",flexWrap:"wrap"}}>
+          <label>Quantos cadastros (opcional)<input type="number" min="1" placeholder="Sem limite" value={inviteUses} onChange={e=>setInviteUses(e.target.value)}/></label>
+          <label>Validade em dias (opcional)<input type="number" min="1" placeholder="Sem vencimento" value={inviteDays} onChange={e=>setInviteDays(e.target.value)}/></label>
+          <button className="btn primary" disabled={busy||!network.policy.canInvite} onClick={invite}>Gerar link de convite</button>
+        </div>
+        {newLink&&<div style={{marginTop:12,display:"grid",gap:8}}>
+          <label>Seu link de convite<input readOnly aria-label="Link para convidar revendas" value={newLink} onFocus={e=>e.target.select()} style={{width:"100%"}}/></label>
+          <div className="row" style={{gap:8,flexWrap:"wrap"}}><button className="btn primary" onClick={copyInvite}>Copiar link</button>
+          <a className="btn" href={waInvite(newLink,network.account.name)} target="_blank" rel="noopener noreferrer">Enviar pelo WhatsApp</a></div>
+        </div>}
+        <p className="muted" style={{marginTop:10}}>Por segurança, o link completo só aparece na criação. Para convidar outra pessoa depois, gere um novo link.</p>
+        {invites.length>0&&<details style={{marginTop:12}}><summary>Convites recentes ({invites.length})</summary><ul>{invites.map(i=><li key={i.id}>{inviteDescription(i)} {i.revokedAt?"— revogado":<button className="btn sm" disabled={busy} onClick={()=>run(()=>api(`/partner/network/invites/${i.id}/revoke`,{method:"POST"}),"Convite revogado.")}>Revogar</button>}</li>)}</ul></details>}
       </div>}
       {network.policy.canSell&&<div className="card"><h3>Preços para as minhas revendas</h3><p className="muted">Defina o preço em créditos de cada duração. A venda sai do seu estoque e os créditos entram na sua carteira.</p>
-        <div className="row" style={{gap:12,alignItems:"end",flexWrap:"wrap"}}><label>Meses<input type="number" min="1" max="120" value={newOffer.months} onChange={e=>setNewOffer(v=>({...v,months:e.target.value}))}/></label><label>Preço em créditos<input type="number" min="1" max="1000000" value={newOffer.priceCredits} onChange={e=>setNewOffer(v=>({...v,priceCredits:e.target.value}))}/></label><button className="btn primary" disabled={busy||!network.policy.canSell} onClick={savePrice}>Salvar preço</button></div>
+        <div className="row" style={{gap:12,alignItems:"end",flexWrap:"wrap"}}><label>Meses<input type="number" min="1" max="120" value={newOffer.months} onChange={e=>setNewOffer(v=>({...v,months:e.target.value}))}/></label><label>Preço em créditos<input type="number" min="1" value={newOffer.priceCredits} onChange={e=>setNewOffer(v=>({...v,priceCredits:e.target.value}))}/></label><button className="btn primary" disabled={busy||!network.policy.canSell} onClick={savePrice}>Salvar preço</button></div>
         {prices.length>0&&<table style={{width:"100%",marginTop:12}}><thead><tr><th>Duração</th><th>Preço</th><th>Estado</th><th></th></tr></thead><tbody>{prices.map(p=><tr key={p.months}><td>{prettyMonths(p.months)}</td><td>{p.priceCredits} créditos</td><td>{p.active?"Ativo":"Pausado"}</td><td><button className="btn sm" disabled={busy} onClick={()=>run(()=>api("/partner/network/prices",{method:"PUT",body:{months:p.months,priceCredits:p.priceCredits,active:!p.active}}),"Oferta atualizada.")}>{p.active?"Pausar":"Ativar"}</button></td></tr>)}</tbody></table>}
       </div>}
       {network.policy.canInvite&&<div className="card"><h3>Revendas da minha rede</h3>
