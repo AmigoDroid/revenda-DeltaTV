@@ -14,3 +14,13 @@ npm run build
 A compilação produz `dist/`, que deve ser testada em homologação antes de substituir o site de produção. Não copie `src/` como se fosse a pasta de arquivos estáticos; o Nginx deve servir a pasta `dist`.
 
 Esta correção resolve caminhos da estrutura e leitura de `.env.production`; não certifica funcionamento completo de todos os recursos.
+
+## Correcao de imports @deltatv/ui
+
+O vite.config.js usa um alias para vendor/deltatv-ui/src. Assim os imports
+`@deltatv/ui/Dialog`, `@deltatv/ui/ProfilePage` etc. resolvem mesmo que
+o node_modules tenha uma instalacao antiga da biblioteca.
+
+Coloque o conteudo deste pacote diretamente na pasta do painel. Execute
+`npm install` e `npm run build`; configure `VITE_API_URL` em `.env.production`.
+O Nginx deve servir o diretorio `dist/`, nao os fontes React.
