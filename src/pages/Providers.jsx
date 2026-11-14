@@ -1,45 +1,26 @@
 import { useState } from "react";
 import { api } from "../api.js";
-import { Badge, Field, Modal, Table, useAction, useUi, RowMenu } from "../ui.jsx";
+import ContentSourcesWorkspace from "@deltatv/ui/ContentSourcesWorkspace";
+import { Field, Modal, useAction, useUi } from "../ui.jsx";
 
-/**
- * Servidores IPTV do próprio revendedor. Ele cadastra o servidor e cria os códigos que apontam para ele.
- * O backend decide tudo: a URL passa pela proteção contra endereços internos, o modo de entrega fica em redirecionamento
- * (o modo proxy gasta banda da plataforma e é decisão do admin) e há um teto de servidores por conta.
- */
-export default function Providers({ providers, codes, onChanged }) {
+/** Frontend único para URLs de revenda; o backend continua validando origem, permissões e roteamento. */
+export default function Providers({ providers = [], codes = [], onChanged, tab = "links", onTabChange, qualityContent }) {
   const run = useAction();
   const { confirm } = useUi();
-  const [form, setForm] = useState(null); // null | {} (novo) | provider (editar)
-
+  const [form, setForm] = useState(null);
   const remove = async (p) => {
-    if (!(await confirm({ title: "Excluir servidor", message: `Excluir “${p.name}”? Só é possível se nenhum dispositivo nem código ativo usar este servidor.`, danger: true, confirmLabel: "Excluir" }))) return;
+    if (!(await confirm({ title: "Excluir servidor", message: `Excluir “${p.name}”? Códigos ou dispositivos vinculados podem impedir a exclusão.`, danger: true, confirmLabel: "Excluir" }))) return;
     if (await run(() => api(`/partner/providers/${p.id}`, { method: "DELETE" }), "Servidor excluído.")) onChanged();
   };
-
-  return (
-    <section>
-      <p className="muted">Cadastre o painel do seu provedor. Depois crie um código de ativação apontando para ele.</p>
-      <div className="actions left"><button className="btn primary" onClick={() => setForm({})}>Novo servidor</button></div>
-      <Table>
-        <thead><tr><th>Nome</th><th>URL base</th><th>Códigos</th><th>Prioridade</th><th>Status</th><th /></tr></thead>
-        <tbody>{providers.map((p) => (
-          <tr key={p.id}>
-            <td>{p.name}</td><td>{p.baseUrl}</td>
-            <td>{codes.filter((c) => c.providerId === p.id && c.status === "active").map((c) => c.code).join(", ") || "—"}</td>
-            <td>{p.priority}</td><td><Badge status={p.status} /></td>
-            <td className="actions">
-              <RowMenu items={[
-                { label: "Editar", onClick: () => setForm(p) },
-                { label: "Excluir", danger: true, onClick: () => remove(p) },
-              ]} />
-            </td>
-          </tr>))}</tbody>
-      </Table>
-      {providers.length === 0 && <p className="muted">Nenhum servidor cadastrado.</p>}
-      {form && <ProviderForm provider={form.id ? form : null} onClose={() => setForm(null)} onSaved={() => { setForm(null); onChanged(); }} />}
-    </section>
-  );
+  return <ContentSourcesWorkspace
+    title="Fontes de conteúdo" description="Edite links, confira prioridades e consulte a qualidade HTTP dos seus servidores sem trocar de área."
+    sources={providers} activeTab={tab} onTabChange={onTabChange} onCreate={()=>setForm({})}
+    onEdit={setForm} onDelete={remove} onRefresh={onChanged}
+    showSummary={false} qualityContent={qualityContent} onOpenCodes={()=>{window.location.hash='#/codigos'}}
+  >
+    {!!codes.length && <p className="muted" style={{fontSize:12,margin:0}}>{codes.filter(c=>c.status==='active').length} código(s) ativo(s) na sua conta. A distribuição e prioridade final são definidas pelo backend.</p>}
+    {form && <ProviderForm provider={form.id ? form : null} onClose={() => setForm(null)} onSaved={() => {setForm(null);onChanged();}} />}
+  </ContentSourcesWorkspace>;
 }
 
 function ProviderForm({ provider, onClose, onSaved }) {

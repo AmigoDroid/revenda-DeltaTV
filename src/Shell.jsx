@@ -45,7 +45,7 @@ const NAV = [
   { id: "playerweb", label: "Player Web", icon: "tv", page: WebAccess, reseller: true, desc: "Códigos (2 letras + 6 números) para o cliente assistir no navegador, com licença e entrega próprias." },
   { id: "white-label", label: "Meus aplicativos", icon: "download", page: WhiteLabelApps, desc: "Aplicativos contratados, servidores e limites de ativação." },
   { id: "aplicativos", label: "Downloads e links", icon: "download", page: Downloads, reseller: true, desc: "Aplicativos para baixar e links úteis: copie o link ou o código do Downloader para passar ao seu cliente." },
-  { id: "servidores", label: "Servidores", icon: "server", page: Servers, desc: "Os painéis IPTV usados pelos seus códigos." },
+  { id: "servidores", label: "Fontes de conteúdo", icon: "server", page: Servers, desc: "Links e qualidade HTTP na mesma área." },
   { id: "monitoramento", label: "Monitoramento", icon: "server", page: ServerMonitor, desc: "Acompanhe a disponibilidade e o tempo de resposta dos seus servidores." },
   { id: "notificacoes", label: "Notificações", icon: "bell", page: Notifications, desc: "Avisos e comunicados da Delta TV." },
   { id: "loginhistory", label: "Histórico de login", icon: "history", page: LoginHistory, desc: "Veja seus acessos, IPs e dispositivos." },
@@ -55,14 +55,14 @@ const NAV = [
   { id: "ajuda", label: "Central de Ajuda", icon: "help", page: null, desc: "Guias e tutoriais interativos do painel." },
 ];
 // Menu por área: o dia a dia (clientes e TVs), o que vende (licenças), a ativação (códigos e servidores) e a conta.
-const SIMPLE_RESELLER = new Set(["central-ativacao", "inicio", "suporte", "clientes", "dispositivos", "estoque", "rede", "codigos", "notificacoes", "ajuda", "conta"]);
+const SIMPLE_RESELLER = new Set(["central-ativacao", "inicio", "suporte", "clientes", "dispositivos", "estoque", "rede", "codigos", "servidores", "notificacoes", "ajuda", "conta"]);
 const GROUPS = [
   { label: null, ids: ["inicio"] },
   { label: "Acesso rápido", ids: ["clientes", "dispositivos", "central-ativacao"] },
   { label: "Atendimento", ids: ["suporte"] },
   { label: "Comercial", ids: ["rede"] },
   { label: "Licenças e financeiro", ids: ["estoque", "creditos", "licencas", "financeiro", "pix-master"] },
-  { label: "Aplicativos e servidores", ids: ["codigos", "playerweb", "servidores", "monitoramento", "white-label", "aplicativos"] },
+  { label: "Aplicativos e servidores", ids: ["codigos", "playerweb", "servidores", "white-label", "aplicativos"] },
   { label: "Conta e suporte", ids: ["notificacoes", "loginhistory", "ajuda"] },
 ];
 const ACCOUNT = [
@@ -169,7 +169,7 @@ function Layout({ user }) {
               <div className="nav-group" key={g.label || "top"}>
                 {g.label && <div className="nav-heading">{g.label}</div>}
                 {list.map((n) => (
-                  <button key={n.id} className={`nav ${n.id === cur.id ? "active" : ""}`} aria-current={n.id === cur.id ? "page" : undefined} data-help-target={({ inicio: "home", ajuda: "help", conta: "profile", servidores: "servers", codigos: "codes", dispositivos: "devices", licencas: "licenses", financeiro: "billing", "white-label": "apps", notificacoes: "notifications" })[n.id] || undefined} onClick={() => go(n.id)}>
+                  <button key={n.id} className={`nav ${(n.id === cur.id || (route === "monitoramento" && n.id === "servidores")) ? "active" : ""}`} aria-current={(n.id === cur.id || (route === "monitoramento" && n.id === "servidores")) ? "page" : undefined} data-help-target={({ inicio: "home", ajuda: "help", conta: "profile", servidores: "servers", codigos: "codes", dispositivos: "devices", licencas: "licenses", financeiro: "billing", "white-label": "apps", notificacoes: "notifications" })[n.id] || undefined} onClick={() => go(n.id)}>
                     <Icon name={n.icon} /><span>{n.label}</span>{showBadge && badge[n.id] > 0 && <b className="count">{badge[n.id]}</b>}
                   </button>
                 ))}

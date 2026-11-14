@@ -1,2 +1,3 @@
-import ServerMonitorView from "../ServerMonitorView.jsx";
-export default function ServerMonitor() { return <ServerMonitorView scope="partner" />; }
+import Servers from "./Servers.jsx";
+/** Compatibilidade com links antigos para /monitoramento. */
+export default function ServerMonitor(){return <Servers initialTab="quality"/>;}

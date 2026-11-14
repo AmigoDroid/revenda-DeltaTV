@@ -6,7 +6,7 @@ import Shell from "./Shell.jsx";
 import { Mark, Bars } from "./icons.jsx";
 import Register from "./pages/Register.jsx";
 import { ForgotPassword } from "./PasswordReset.jsx";
-import "./password-reset.css";
+import "@deltatv/ui/password-reset.css";
 
 function Login({ onRegister, onForgotPassword }) {
   const run = useAction();

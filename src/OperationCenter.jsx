@@ -1,5 +1,5 @@
 import React from 'react';
-import './operation-center.css';
+import '@deltatv/ui/operation-center.css';
 export const CENTER_CONFIG = {
   pagamentos: {title:'Pagamentos',intro:'Tudo sobre Pix, saldo, faturas e compras na sua rede.', entries:[
     ['financeiro','Faturas e pagamentos','Pagamentos e histórico financeiro'],['creditos','Créditos e Pix','Recarregar saldo e consultar extrato'],['pix-master','Pix dos Masters','Compras, vendas e recebimentos de licenças']]},

@@ -8,7 +8,7 @@ const normalizeMac = input => {
   const h=String(input||'').toUpperCase().replace(/[^0-9A-F]/g,'');
   return h.length===12?h.match(/.{2}/g).join(':'):null;
 };
-const money=cents => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(cents||0)/100);
+const money = formatBRL;
 const Message=({type='info',children})=><p role={type==='error'?'alert':'status'} className={`notice ${type==='error'?'error':''}`}>{children}</p>;
 function RequestButton({busy,children,...props}) { return <button type="submit" disabled={busy||props.disabled} className="btn primary" {...props}>{busy?'Processando…':children}</button>; }
 
@@ -50,16 +50,17 @@ export default function Customers3({go}) {
   },[mac]);
   const selectedSubscription=details?.subscriptions?.find(s=>s.id===activeSub);
   return <div className="delta3-hub">
-    <div className="card" style={{padding:18,marginBottom:16}}>
-      <strong>Clientes e ativações</strong>
+    <header className="delta3-header">
+      <div className="delta3-eyebrow">ATENDIMENTO E ATIVAÇÕES</div>
+      <h2>Clientes e dispositivos</h2>
       <p className="muted">Cadastre a pessoa primeiro. Depois associe planos e TVs, sem precisar repetir os dados do cliente.</p>
-      <div className="actions" style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-        {[['clientes','Clientes'],['planos','Planos'],['ativacao','Ativar uma TV'],['antigos','Cadastros por MAC (antigos)']].map(([k,v])=><button type="button" className={`btn ${tab===k?'primary':''}`} key={k} onClick={()=>setTab(k)} aria-pressed={tab===k}>{v}</button>)}
-      </div>
-    </div>
+      <nav className="delta3-tabs" aria-label="Gerenciamento de clientes">
+        {[['clientes','Clientes'],['planos','Planos'],['ativacao','Ativar uma TV'],['antigos','Cadastros por MAC (antigos)']].map(([k,v])=><button type="button" className={`btn ${tab===k?'primary':''}`} key={k} onClick={()=>setTab(k)} aria-current={tab===k?'page':undefined}>{v}</button>)}
+      </nav>
+    </header>
     {error&&<Message type="error">{error}</Message>}{notice&&<Message>{notice}</Message>}
-    {tab==='clientes'&&<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,300px),1fr))',gap:16}}>
-      <section className="card" style={{padding:18}}>
+    {tab==='clientes'&&<div className="delta3-grid">
+      <section className="card delta3-section">
         <h3>Novo cliente</h3><p className="muted">Nenhum MAC é obrigatório para cadastrar.</p>
         <form onSubmit={e=>{e.preventDefault();safe(async()=>{const c=await api('/partner/commerce/customers',{method:'POST',body:{...form,email:form.email||null,phone:form.phone||null}});setForm({name:'',email:'',phone:''});await refresh();await showCustomer(c.id);setNotice('Cliente cadastrado. Escolha um plano ou associe uma TV.');});}}>
           <label>Nome completo <input required minLength={2} maxLength={160} value={form.name} onChange={e=>setForm(v=>({...v,name:e.target.value}))}/></label>
@@ -68,16 +69,16 @@ export default function Customers3({go}) {
           <RequestButton busy={busy}>Cadastrar cliente</RequestButton>
         </form>
       </section>
-      <section className="card" style={{padding:18}}>
+      <section className="card delta3-section">
         <h3>Meus clientes</h3>
         <label>Pesquisar pelo nome, contato ou e-mail<input placeholder="Encontrar cliente…" value={q} onChange={e=>setQ(e.target.value)}/></label>
-        {!list.length?<p className="muted">Nenhum cliente encontrado. Use o cadastro ao lado.</p>:<div style={{maxHeight:360,overflowY:'auto'}}>
-          {list.map(c=><button key={c.id} type="button" className="btn" style={{width:'100%',textAlign:'left',marginBottom:6}} onClick={()=>safe(()=>showCustomer(c.id))}>
-            <strong>{c.name}</strong><span className="muted" style={{display:'block',fontSize:12}}>{c.phone||c.email||'Sem contato'} · {c.linkedDevices} TV(s)</span>
+        {!list.length?<p className="muted">Nenhum cliente encontrado. Use o cadastro ao lado.</p>:<div className="delta3-client-list">
+          {list.map(c=><button key={c.id} type="button" className={`btn delta3-client-row ${selected===c.id?"is-selected":""}`} onClick={()=>safe(()=>showCustomer(c.id))}>
+            <strong>{c.name}</strong><span className="muted delta3-client-meta">{c.phone||c.email||'Sem contato'} · {c.linkedDevices} TV(s)</span>
           </button>)}
         </div>}
       </section>
-      {details&&<section className="card" style={{padding:18,gridColumn:'1 / -1'}}>
+      {details&&<section className="card delta3-section delta3-full">
         <h3>{details.customer.name}</h3><p className="muted">Assinaturas comerciais e dispositivos vinculados</p>
         <form onSubmit={e=>{e.preventDefault();safe(async()=>{await api(`/partner/commerce/customers/${selected}/subscriptions`,{method:'POST',body:{planId:subscriptionPlan}});await showCustomer(selected);setNotice('Plano adicionado como rascunho. Não libera automaticamente a licença da TV.');});}}>
           <label>Selecionar plano
@@ -86,9 +87,9 @@ export default function Customers3({go}) {
           <RequestButton busy={busy} disabled={!subscriptionPlan}>Adicionar plano</RequestButton>
         </form>
         {!plans.length&&<p className="muted">Primeiro crie um plano na aba “Planos”.</p>}
-        <div style={{display:'grid',gap:8,marginTop:14}}>{details.subscriptions.map(s=><div key={s.id} className="card" style={{padding:12}}>
+        <div className="delta3-subscriptions">{details.subscriptions.map(s=><div key={s.id} className="delta3-subscription">
           <strong>{s.planName}</strong><p className="muted">Situação: {s.state} · {s.usedSlots} de {s.slots??'ilimitadas'} vagas vinculadas</p>
-          <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+          <div className="delta3-actions">
             <button type="button" className="btn" onClick={()=>{setActiveSub(s.id);setTab('ativacao');}}>Gerenciar TVs</button>
             {s.state==='draft'&&<button className="btn" disabled={busy} type="button" onClick={()=>safe(async()=>{
               await api(`/partner/commerce/subscriptions/${s.id}/state`,{method:'POST',body:{state:'active',reason:'Confirmação comercial manual do responsável'}});
@@ -98,7 +99,7 @@ export default function Customers3({go}) {
         </div>)}</div>
       </section>}
     </div>}
-    {tab==='planos'&&<section className="card" style={{padding:18}}>
+    {tab==='planos'&&<section className="card delta3-section">
       <h3>Planos para seus clientes</h3><p className="muted">Crie planos de até quantas TVs quiser. Vagas ilimitadas podem ser configuradas posteriormente pela administração.</p>
       <form onSubmit={e=>{e.preventDefault();safe(async()=>{
         const cents=toCents(plan.price);if(cents===null)throw Error('Informe um valor válido em reais.');
@@ -111,9 +112,9 @@ export default function Customers3({go}) {
         <label>Duração (meses) <input required type="number" min="1" max="120" value={plan.months} onChange={e=>setPlan(v=>({...v,months:e.target.value}))}/></label>
         <RequestButton busy={busy}>Salvar plano</RequestButton>
       </form>
-      <h4>Planos disponíveis</h4>{plans.map(p=><div key={p.id} className="card" style={{padding:12,marginBottom:6}}><strong>{p.name}</strong><span className="muted"> · {money(p.priceCents)} · {p.includedSlots??'∞'} vagas</span></div>)}
+      <h4>Planos disponíveis</h4>{plans.map(p=><div key={p.id} className="delta3-subscription"><strong>{p.name}</strong><span className="muted"> · {money(p.priceCents)} · {p.includedSlots??'∞'} vagas</span></div>)}
     </section>}
-    {tab==='ativacao'&&<section className="card" style={{padding:18}}>
+    {tab==='ativacao'&&<section className="card delta3-section">
       <h3>Ativar ou vincular TV</h3><p className="muted">Digite o MAC. O painel consulta o servidor e atualiza o resultado quando houver novidades pelo WebSocket.</p>
       <label>MAC do dispositivo <input autoComplete="off" inputMode="text" placeholder="AA:BB:CC:DD:EE:FF" value={macInput} onChange={e=>setMacInput(e.target.value)} /></label>
       {macState.status==='idle'&&<Message>Digite o MAC completo para consultar.</Message>}
@@ -125,7 +126,7 @@ export default function Customers3({go}) {
         <select value={activeSub} onChange={e=>setActiveSub(e.target.value)}><option value="">Selecione o plano…</option>{details?.subscriptions?.map(s=><option key={s.id} value={s.id}>{s.planName} — {s.usedSlots}/{s.slots??'∞'} vagas ({s.state})</option>)}</select>
       </label>
       {activeSub&&<p className="muted">{selectedSubscription?`Plano: ${selectedSubscription.planName}.`:'Seleção atual de outra ficha.'} A associação não cria uma licença nem modifica o conteúdo da TV.</p>}
-      <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+      <div className="delta3-actions">
         <button type="button" className="btn primary" disabled={busy||macState.status!=='found'||!activeSub||selectedSubscription?.state!=='active'} onClick={()=>safe(async()=>{
           await api(`/partner/commerce/subscriptions/${activeSub}/slots`,{method:'POST',body:{mac}});
           if(selected)await showCustomer(selected);
@@ -133,7 +134,7 @@ export default function Customers3({go}) {
         })}>Vincular TV existente ao plano</button>
         <button type="button" className="btn" onClick={()=>go('dispositivos')}>Abrir ativação de licença e listas</button>
       </div>
-      <p className="muted" style={{fontSize:12}}>Para uma TV sem licença, utilize a ativação atual em Dispositivos. Depois volte e vincule a TV a uma vaga do plano.</p>
+      <p className="muted delta3-note">Para uma TV sem licença, utilize a ativação atual em Dispositivos. Depois volte e vincule a TV a uma vaga do plano.</p>
     </section>}
     {tab==='antigos'&&<LegacyClients go={go}/>}
   </div>;
