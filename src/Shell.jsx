@@ -1,3 +1,4 @@
+import TvMessages from "./TvMessages.jsx";
 import TaskFinder from "@deltatv/ui/TaskFinder";
 import { TASKS } from "./task-directory.js";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -32,6 +33,7 @@ import HelpExperience from "./HelpExperience.jsx";
 
 // Cada item vira uma página. `reseller`: só aparece para quem revende licenças.
 const NAV = [
+  {id:"tvmessages",label:"Mensagens para TVs",icon:"bell",page:TvMessages,desc:"Envie comunicados aos aparelhos dos seus clientes."},
   ...Object.entries(CENTER_CONFIG).map(([id,c])=>({id:`central-${id}`,label:c.title,icon:({pagamentos:"wallet",dispositivos:"tv",licenciamento:"ticket",ativacao:"key",conta:"user"})[id],page:OperationCenter,desc:c.intro,center:true})),
   { id: "inicio", label: "Início", icon: "home", page: Home, desc: "O que precisa da sua atenção hoje." },
   { id: "suporte", label: "Resolver problema da TV", icon: "help", page: SupportCenter, desc: "Diagnostique um cliente sem interpretar logs ou códigos técnicos." },
@@ -59,10 +61,10 @@ const SIMPLE_RESELLER = new Set(["central-ativacao", "inicio", "suporte", "clien
 const GROUPS = [
   { label: null, ids: ["inicio"] },
   { label: "Acesso rápido", ids: ["clientes", "dispositivos", "central-ativacao"] },
-  { label: "Atendimento", ids: ["suporte"] },
+  { label: "Atendimento", ids: ["suporte", "tvmessages"] },
   { label: "Comercial", ids: ["rede"] },
   { label: "Licenças e financeiro", ids: ["estoque", "creditos", "licencas", "financeiro", "pix-master"] },
-  { label: "Aplicativos e servidores", ids: ["codigos", "playerweb", "servidores", "white-label", "aplicativos"] },
+  { label: "Aplicativos e servidores", ids: ["codigos", "playerweb", "servidores", "monitoramento", "white-label", "aplicativos"] },
   { label: "Conta e suporte", ids: ["notificacoes", "loginhistory", "ajuda"] },
 ];
 const ACCOUNT = [
@@ -159,11 +161,11 @@ function Layout({ user }) {
         <div className="brand"><span className="brand-icon"><Mark size={38} /></span><div><strong>Delta<span>TV</span></strong><small>PAINEL DA REVENDA</small></div>
           <button className="icon sidebar-close" type="button" aria-label="Fechar menu" onClick={() => setOpen(false)}><Icon name="x" size={20}/></button>
         </div>
-        <button type="button" className="easy-mode-button" aria-pressed={!simpleMode} onClick={() => setSimpleMode((v) => !v)}>{simpleMode ? "⚙ Mostrar todas as opções" : "✓ Usar menu simples"}</button>
+        
         <div className="sidebar-context"><span className="sidebar-context-dot" /> <span>Área de trabalho</span><span className="sidebar-context-mark">Revenda</span></div>
         <nav aria-label="Principal">
           {GROUPS.map((g) => {
-            const list = items.filter((n) => g.ids.includes(n.id) && (!simpleMode || SIMPLE_RESELLER.has(n.id) || n.id === cur.id));
+            const list = items.filter((n) => g.ids.includes(n.id));
             if (!list.length) return null;
             return (
               <div className="nav-group" key={g.label || "top"}>
@@ -189,7 +191,7 @@ function Layout({ user }) {
           <div className="topbar-context"><span className="topbar-eyebrow">PAINEL DA REVENDA</span><strong className="topbar-title">{cur.label}</strong></div>
           <div className="topbar-tools">
             {!blocked && <button className="btn primary sm" type="button" onClick={()=>{sessionStorage.setItem("deltatv-quick-activate","1");go("clientes");window.dispatchEvent(new Event("deltatv-open-activation"));}}>Ativar TV</button>}
-            <button type="button" className="easy-mode-button" aria-pressed={!simpleMode} onClick={() => setSimpleMode((v) => !v)}>{simpleMode ? "Modo simples · mostrar tudo" : "Modo completo · simplificar"}</button>
+            
             <button type="button" className="btn sm" data-help-target="context-help" onClick={() => window.dispatchEvent(new CustomEvent("deltatv-help-context", { detail: { screen: cur.id } }))}>? Ajuda</button>
             {!blocked && <button type="button" className="topbar-notify" aria-label={notificationCount > 0 ? `${notificationCount} notificações não lidas` : "Abrir notificações"} title="Notificações" onClick={() => go("notificacoes")}>
               <Icon name="bell" size={19}/>{showBadge && notificationCount > 0 && <span className="topbar-notify-count">{notificationCount > 99 ? "99+" : notificationCount}</span>}

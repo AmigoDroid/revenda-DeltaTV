@@ -1,0 +1,1 @@
+import{c as o,j as t,R as _}from"./password-reset-D3uS_J6f.js";const e=window.__DELTA_PASSWORD_RESET_TOKEN__||"";window.__DELTA_PASSWORD_RESET_TOKEN__=void 0;o.createRoot(document.getElementById("root")).render(t.jsx(_,{token:e}));

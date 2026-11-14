@@ -1,3 +1,4 @@
+import { formatBRL } from "@deltatv/ui/money";
 import { useEffect, useMemo, useState } from 'react';
 import './customers3.css';
 import { api } from '../api.js';

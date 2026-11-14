@@ -1,4 +1,4 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';
+import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from './read-source.js';
 const read = p => readFileSync(new URL(p,import.meta.url),'utf8');
 test('Central apresenta guia Roku e checklist com progresso persistido',()=>{
  const jsx=read('../src/HelpExperience.jsx'),css=read('../src/help-experience.css');

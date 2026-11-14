@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
+import fs from "./read-source.js";
 const component = fs.readFileSync(new URL("../src/ProfilePage.jsx", import.meta.url), "utf8");
 const shell = fs.readFileSync(new URL("../src/Shell.jsx", import.meta.url), "utf8");
 const api = fs.readFileSync(new URL("../src/api.js", import.meta.url), "utf8");

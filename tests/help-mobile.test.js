@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync } from './read-source.js';
 const read = path => readFileSync(new URL(path, import.meta.url), 'utf8');
 test('tour da revenda mostra menu escondido e oferece instruções recolhíveis', () => {
   const tour = read('../src/HelpExperience.jsx');
