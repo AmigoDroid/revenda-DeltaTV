@@ -3,6 +3,7 @@ import { logout } from "./api.js";
 import { Icon, Mark } from "./icons.jsx";
 import { PortalProvider, usePortal } from "./portal.jsx";
 import Home from "./pages/Home.jsx";
+import { OperationCenter, CENTER_CONFIG } from "./OperationCenter.jsx";
 import { useSimpleMode } from "./useSimpleMode.js";
 import { EasyPageGuide } from "./EasyStart.jsx";
 import "./easy-start.css";
@@ -29,6 +30,7 @@ import HelpExperience from "./HelpExperience.jsx";
 
 // Cada item vira uma página. `reseller`: só aparece para quem revende licenças.
 const NAV = [
+  ...Object.entries(CENTER_CONFIG).map(([id,c])=>({id:`central-${id}`,label:c.title,icon:({pagamentos:"wallet",dispositivos:"tv",licenciamento:"ticket",ativacao:"key",conta:"user"})[id],page:OperationCenter,desc:c.intro,center:true})),
   { id: "inicio", label: "Início", icon: "home", page: Home, desc: "O que precisa da sua atenção hoje." },
   { id: "suporte", label: "Resolver problema da TV", icon: "help", page: SupportCenter, desc: "Diagnostique um cliente sem interpretar logs ou códigos técnicos." },
   { id: "clientes", label: "Clientes", icon: "users", page: Clients, reseller: true, desc: "Nome, contato, valor e vencimento de cada TV. Cadastre um MAC antes de ativar ou complete os dados de uma TV já ativada." },
@@ -50,13 +52,14 @@ const NAV = [
   { id: "ajuda", label: "Central de Ajuda", icon: "help", page: null, desc: "Guias e tutoriais interativos do painel." },
 ];
 // Menu por área: o dia a dia (clientes e TVs), o que vende (licenças), a ativação (códigos e servidores) e a conta.
-const SIMPLE_RESELLER = new Set(["inicio", "suporte", "clientes", "dispositivos", "estoque", "rede", "codigos", "notificacoes", "ajuda", "conta"]);
+const SIMPLE_RESELLER = new Set(["central-pagamentos", "central-dispositivos", "central-licenciamento", "central-ativacao", "central-conta", "inicio", "suporte", "clientes", "dispositivos", "estoque", "rede", "codigos", "notificacoes", "ajuda", "conta"]);
 const GROUPS = [
   { label: null, ids: ["inicio"] },
-  { label: "Atendimento", ids: ["suporte", "clientes", "dispositivos"] },
-  { label: "Licenças", ids: ["rede", "estoque", "creditos", "licencas"] },
-  { label: "Ativação", ids: ["codigos", "playerweb", "servidores", "monitoramento", "white-label", "aplicativos"] },
-  { label: "Conta", ids: ["financeiro", "notificacoes", "loginhistory", "conta", "ajuda"] },
+  { label: "Centrais de trabalho", ids: ["central-pagamentos", "central-dispositivos", "central-licenciamento", "central-ativacao", "central-conta"] },
+  { label: "Atendimento", ids: ["suporte", "clientes"] },
+  { label: "Comercial", ids: ["rede"] },
+  { label: "Ferramentas avançadas", ids: ["estoque", "creditos", "licencas", "codigos", "playerweb", "servidores", "monitoramento", "white-label", "aplicativos", "financeiro"] },
+  { label: "Conta e suporte", ids: ["notificacoes", "loginhistory", "ajuda"] },
 ];
 const ACCOUNT = [
   { id: "conta", label: "Minha conta", icon: "user", page: ProfilePage, desc: "Seu perfil e a segurança da conta." },
@@ -142,6 +145,7 @@ function Layout({ user }) {
   const cur = items.find((n) => n.id === route) || items[0];
   const go = useCallback((id) => { location.hash = `/${id}`; setOpen(false); window.scrollTo(0, 0); }, []);
   const Page = cur.page;
+  const centerAllowed = id => items.some(item => item.id === id);
   const title = cur.id === "inicio" ? `Olá, ${(user.name || "").split(" ")[0] || "revendedor"}` : cur.label;
   const badge = { clientes: summary?.overdue, notificacoes: notificationCount };
 
@@ -200,7 +204,7 @@ function Layout({ user }) {
           </header>
           {simpleMode && cur.id !== "inicio" && <EasyPageGuide role="reseller" page={cur.id} onBack={() => go("inicio")} />}
           <HelpExperience screen={cur.id} portal="reseller" userId={user.id} onNavigate={go}/>
-          {Page && <Page go={go} user={user} />}
+          {Page && (cur.center ? <OperationCenter section={cur.id.replace("central-", "")} onNavigate={go} allowed={centerAllowed}/> : <Page go={go} user={user} />)}
         </main>
       </div>
     </div>
