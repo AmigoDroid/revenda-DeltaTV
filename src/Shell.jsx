@@ -1,3 +1,5 @@
+import TaskFinder from "./TaskFinder.jsx";
+import { TASKS } from "./task-directory.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { logout } from "./api.js";
 import { Icon, Mark } from "./icons.jsx";
@@ -199,6 +201,7 @@ function Layout({ user }) {
           <button type="button" className="btn primary" onClick={() => go("notificacoes")}>Ler mensagens <Icon name="arrow-right" size={15}/></button>
         </div>}
         <main className="content">
+          <TaskFinder tasks={TASKS.filter(task=>centerAllowed(task.route))} onNavigate={go} />
           <header className="page-title">
             <div className="page-title-copy"><span className="page-eyebrow">DELTA TV <span>/</span> {cur.label.toUpperCase()}</span><h1>{title}</h1>{cur.desc && <p className="muted">{cur.desc}</p>}</div>
           </header>

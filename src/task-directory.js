@@ -1,0 +1,21 @@
+/** Catálogo de ações e sinônimos. Rotas existentes, nunca cria autorizações. */
+export const TASKS = [
+  {"label": "Cadastrar cliente", "route": "clientes", "description": "Dados, contato e vencimento do cliente", "keywords": ["novo", "cliente", "usuario", "cadastro"]},
+  {"label": "Encontrar TV pelo MAC", "route": "dispositivos", "description": "Consultar ativações e listas do dispositivo", "keywords": ["tv", "aparelho", "localizar", "mac"]},
+  {"label": "Diagnosticar TV offline", "route": "suporte", "description": "Resolver problemas de conexão e reprodução", "keywords": ["suporte", "falha", "erro", "diagnostico"]},
+  {"label": "Ativar uma TV", "route": "dispositivos", "description": "Vincular e gerenciar um dispositivo", "keywords": ["aparelho", "ativacao", "nova", "mac"]},
+  {"label": "Gerar código para TV", "route": "codigos", "description": "Criar e consultar códigos de ativação", "keywords": ["ativar", "codigo", "senha"]},
+  {"label": "Instalar aplicativo na TV", "route": "aplicativos", "description": "Links de instalação e Downloader", "keywords": ["roku", "android", "samsung", "lg", "download"]},
+  {"label": "Configurar Player Web", "route": "playerweb", "description": "Acesso pelo navegador", "keywords": ["webroku", "web", "roku", "navegador"]},
+  {"label": "Consultar licenças", "route": "licencas", "description": "Ativações, renovações e vencimentos", "keywords": ["licenca", "renovar", "prazo"]},
+  {"label": "Comprar e distribuir licenças", "route": "rede", "description": "Compras do Master e gestão de revendas", "keywords": ["pix", "master", "submaster", "licenca"]},
+  {"label": "Ver estoque", "route": "estoque", "description": "Licenças disponíveis", "keywords": ["licença", "saldo", "transferir"]},
+  {"label": "Recarregar créditos", "route": "creditos", "description": "Pagamentos Pix e extrato", "keywords": ["pix", "saldo", "credito", "recarga"]},
+  {"label": "Ver pagamentos", "route": "financeiro", "description": "Histórico financeiro e faturas", "keywords": ["pix", "boleto", "cobrança"]},
+  {"label": "Convidar revenda", "route": "rede", "description": "Cadastrar participantes da rede", "keywords": ["convite", "link", "master", "novo", "revendedor"]},
+  {"label": "Gerenciar servidores", "route": "servidores", "description": "Origem e disponibilidade do conteúdo", "keywords": ["url", "link", "iptv"]},
+  {"label": "Ver meus aplicativos", "route": "white-label", "description": "Aplicativos personalizados", "keywords": ["white", "label", "versão"]},
+  {"label": "Alterar minha conta", "route": "conta", "description": "Perfil, senha e segurança", "keywords": ["usuario", "email", "senha"]},
+  {"label": "Consultar histórico de login", "route": "loginhistory", "description": "Acessos e dispositivos", "keywords": ["auditoria", "ip"]},
+  {"label": "Aprender a usar o painel", "route": "ajuda", "description": "Tutoriais passo a passo", "keywords": ["ajuda", "duvida", "tutorial"]},
+];
