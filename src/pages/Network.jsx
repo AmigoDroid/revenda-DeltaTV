@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../api.js";
 import { usePortal } from "../portal.jsx";
-import MasterPix from "./MasterPix.jsx";
 
 const prettyMonths = (m) => `${m} ${m===1?"mês":"meses"}`;
 const resourceLabels={servers:"Servidores IPTV",codes:"Códigos de ativação",devices:"Gerenciar TVs",clients:"Clientes",stock:"Estoque de licenças",credits:"Créditos e compras",web:"Player Web",white_label:"Aplicativos personalizados",remote:"Controle remoto"};
@@ -9,7 +8,7 @@ const makeKey=()=>crypto.randomUUID();
 const waInvite=(url,name)=>`https://wa.me/?text=${encodeURIComponent(`Olá! Cadastre sua revenda DeltaTV na rede de ${name}: ${url}`)}`;
 const optionalNumber=value=>value===""?null:Number(value);
 const inviteDescription=i=>`${i.uses}/${i.maxUses==null?"sem limite":i.maxUses} cadastros · ${i.expiresAt?`vence ${new Date(i.expiresAt).toLocaleDateString("pt-BR")}`:"sem vencimento"}`;
-export default function Network() {
+export default function Network({go}) {
   const {me}=usePortal();
   const [network,setNetwork]=useState(null),[prices,setPrices]=useState([]),[invites,setInvites]=useState([]),[sales,setSales]=useState([]),[resources,setResources]=useState(null),[tree,setTree]=useState([]),[summary,setSummary]=useState(null);
   const [errors,setErrors]=useState(""),[message,setMessage]=useState(""),[busy,setBusy]=useState(false),[newLink,setNewLink]=useState("");
@@ -118,10 +117,10 @@ export default function Network() {
       <div className="row" style={{gap:20,flexWrap:"wrap"}}><strong>{network.account.role}</strong><span>Créditos: <b>{network.creditBalance}</b></span><span>Licenças em estoque: <b>{network.stock.reduce((n,s)=>n+Number(s.quantity),0)}</b></span>{master&&<span>Revendas diretas: <b>{network.childrenTotal??network.children.length}</b></span>}</div>
       {errors&&<p role="alert" className="error">{errors}</p>}{message&&<p role="status" style={{color:"var(--ok)"}}>{message}</p>}
     </div>
-    <MasterPix account={network.account} policy={network.policy} onChanged={()=>{reload().catch(()=>{});window.dispatchEvent(new Event("stock-changed"));}}/>
+    {(master || network.parent) && <div className="card"><h3>Pagamentos via Pix</h3><p className="muted">As compras e recebimentos por Pix ficam na área Financeira. Os convites e a hierarquia continuam aqui.</p><button type="button" className="btn primary" onClick={()=>go?.('pix-master')}>Abrir Pix da minha rede</button></div>}
     {network.parent&&<div className="card">
       <h3>Comprar com créditos (opcional)</h3>
-      <p className="muted">Esta é a modalidade antiga com créditos. Para pagar diretamente ao Master em reais, use a seção Pix acima.</p>
+      <p className="muted">Esta é a modalidade antiga com créditos. Para pagar diretamente ao Master em reais, acesse Financeiro → Pix da minha rede.</p>
       {network.offers.length?<div className="row" style={{gap:12,alignItems:"end",flexWrap:"wrap"}}>
         <label>Duração<select disabled={!!pendingPurchase||busy} value={price?.months||""} onChange={e=>setOrder(v=>({...v,months:e.target.value}))}>{network.offers.map(p=><option key={p.months} value={p.months}>{prettyMonths(p.months)} — {p.priceCredits} créditos</option>)}</select></label>
         <label>Quantidade<input disabled={!!pendingPurchase||busy} type="number" min="1" value={order.quantity} onChange={e=>setOrder(v=>({...v,quantity:e.target.value}))}/></label>

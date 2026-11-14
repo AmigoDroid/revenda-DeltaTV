@@ -256,3 +256,6 @@ input[type=checkbox],input[type=radio]{accent-color:#6195ff}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition-duration:0s!important;animation-duration:0s!important}}
 /* A última métrica de uma linha ímpar ocupa toda a largura no celular. */
 @media(max-width:700px){.home-section .metrics>.metric:last-child:nth-child(odd){grid-column:1/-1}}
+
+/* Contraste consistente da busca compartilhada no tema escuro. */
+.task-finder{--ui-surface:#19263e;--ui-text:#f1f6ff;--ui-border:#5b7096;--ui-accent:#a49af9;--ui-hover:#304267}

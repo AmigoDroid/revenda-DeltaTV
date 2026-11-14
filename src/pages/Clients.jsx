@@ -1,3 +1,5 @@
+import WizardProgress from "@deltatv/ui/WizardProgress";
+import { useTaskIntent } from "@deltatv/ui/task-intent";
 import { useEffect, useState } from "react";
 import ExpiryNoticeSettings from "./ExpiryNoticeSettings.jsx";
 import { api } from "../api.js";
@@ -56,6 +58,7 @@ export default function Clients() {
   const list = useList("/partner/clients", { q: "", filter: "all" });
   const summary = useLoad(() => api("/partner/clients/summary"), []);
   const [edit, setEdit] = useState(null); // linha da lista (cadastrar/editar) ou { mac: "", isNew: true }
+  useTaskIntent("clientes", "client.create", () => setEdit({ mac: "", isNew: true }));
   const [access, setAccess] = useState(null); // linha cujo usuário/senha da lista está aberto
   const { filter: applyFilter, reload: reloadList } = list;
   const reloadSummary = summary.reload;
@@ -172,6 +175,7 @@ function ClientModal({ row, onClose, onSaved }) {
   const run = useAction();
   const { toast } = useUi();
   const existing = !!row.clientId;
+  const [step, setStep] = useState(0);
   const [f, setF] = useState({
     mac: row.mac || "", name: row.name || "", phone: row.phone || "", address: row.address || "", notes: row.notes || "",
     price: row.priceCents != null ? (row.priceCents / 100).toFixed(2).replace(".", ",") : "", dueDate: row.dueDate || "",
@@ -180,6 +184,12 @@ function ClientModal({ row, onClose, onSaved }) {
   const set = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.value }));
   const macLocked = !existing && !row.isNew; // TV já ativada: o MAC vem da lista
 
+  const nextStep = () => {
+    if(!formatMac(f.mac)) return toast('Informe um MAC válido. Ex.: AA:BB:CC:DD:EE:FF.', 'bad');
+    if(f.name.trim().length<2) return toast('Informe o nome do cliente.', 'bad');
+    if(step===1 && f.price.trim() && toCents(f.price) === null) return toast('Valor inválido. Ex.: 30,00.', 'bad');
+    setStep(v=>Math.min(2,v+1));
+  };
   const submit = async (e) => {
     e.preventDefault();
     const mac = formatMac(f.mac);
@@ -201,13 +211,15 @@ function ClientModal({ row, onClose, onSaved }) {
 
   return (
     <Modal title={existing ? `Editar cliente · ${row.name}` : "Cadastrar cliente"} onClose={onClose}>
-      <form onSubmit={submit}>
-        <div className="row">
+      <form onSubmit={e => { e.preventDefault(); if(existing || step===2) void submit(e); else nextStep(); }}>
+        {!existing && <WizardProgress steps={['Identificação','Informações opcionais','Confirmar']} step={step}/>}
+        {(existing || step===0) && <div className="row">
           <Field label="MAC da TV" hint={macLocked ? "TV já ativada por você." : "Pode ser de uma TV ainda não ativada."}>
             <input className="mono" value={f.mac} onChange={set("mac")} placeholder="AA:BB:CC:DD:EE:FF" readOnly={macLocked} required autoFocus={row.isNew} />
           </Field>
           <Field label="Nome do cliente"><input value={f.name} onChange={set("name")} maxLength={160} required autoFocus={!row.isNew} /></Field>
-        </div>
+        </div>}
+        {(existing || step===1) && <>
         <div className="row">
           <Field label="Telefone / WhatsApp"><input value={f.phone} onChange={set("phone")} placeholder="(85) 99999-0000" inputMode="tel" maxLength={30} /></Field>
           <Field label="Valor cobrado (R$)" hint="Opcional. Ex.: 30,00"><input value={f.price} onChange={set("price")} placeholder="30,00" inputMode="decimal" /></Field>
@@ -217,9 +229,11 @@ function ClientModal({ row, onClose, onSaved }) {
           <Field label="Endereço"><input value={f.address} onChange={set("address")} maxLength={300} /></Field>
         </div>
         <Field label="Observações"><input value={f.notes} onChange={set("notes")} maxLength={500} /></Field>
+        </>}
+        {!existing && step===2 && <section className="card" aria-label="Revisar cadastro"><h3>Confira os dados</h3><p><b>Nome:</b> {f.name}</p><p><b>TV (MAC):</b> {f.mac}</p><p><b>Valor mensal:</b> {f.price||'Não informado'}</p><p><b>Vencimento:</b> {f.dueDate||'Não informado'}</p><p className="muted">Salvar o cliente não gera pagamento nem ativa a TV automaticamente.</p></section>}
         <div className="actions">
-          <button type="button" className="btn" onClick={onClose}>Cancelar</button>
-          <button className="btn primary" disabled={busy}>{busy ? "Salvando…" : "Salvar"}</button>
+          <button type="button" className="btn" onClick={!existing && step>0 ? () => setStep(v=>v-1) : onClose}>{!existing && step>0 ? 'Voltar' : 'Cancelar'}</button>
+          <button type="submit" className="btn primary" disabled={busy}>{busy ? 'Salvando…' : existing || step===2 ? 'Salvar cliente' : 'Continuar'}</button>
         </div>
       </form>
     </Modal>

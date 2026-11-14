@@ -1,6 +1,9 @@
 // Cliente da API. Tokens de acesso são curtos; o refresh é rotacionado a cada uso.
 // A autorização real acontece no backend: esconder botões aqui é só conveniência de UI.
-const API = (import.meta.env.VITE_API_URL || "http://localhost:3000").replace(/\/+$/, "");
+const API = (import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:3000" : "")).replace(/\/+$/, "");
+if (!API || !/^https?:\/\//i.test(API) || (import.meta.env.PROD && !API.startsWith("https://"))) {
+  throw new Error("VITE_API_URL deve apontar para uma API válida via HTTPS em produção.");
+}
 const KEY = "iptv-reseller-auth"; // chave própria: não mistura sessão com o painel admin
 
 let auth = (() => { try { return JSON.parse(localStorage.getItem(KEY)); } catch { return null; } })();

@@ -1,6 +1,6 @@
 /** Catálogo de ações e sinônimos. Rotas existentes, nunca cria autorizações. */
 export const TASKS = [
-  {"label": "Cadastrar cliente", "route": "clientes", "description": "Dados, contato e vencimento do cliente", "keywords": ["novo", "cliente", "usuario", "cadastro"]},
+  {"label": "Cadastrar cliente", "actionId":"client.create", "route": "clientes", "description": "Dados, contato e vencimento do cliente", "keywords": ["novo", "cliente", "usuario", "cadastro"]},
   {"label": "Encontrar TV pelo MAC", "route": "dispositivos", "description": "Consultar ativações e listas do dispositivo", "keywords": ["tv", "aparelho", "localizar", "mac"]},
   {"label": "Diagnosticar TV offline", "route": "suporte", "description": "Resolver problemas de conexão e reprodução", "keywords": ["suporte", "falha", "erro", "diagnostico"]},
   {"label": "Ativar uma TV", "route": "dispositivos", "description": "Vincular e gerenciar um dispositivo", "keywords": ["aparelho", "ativacao", "nova", "mac"]},
@@ -11,6 +11,7 @@ export const TASKS = [
   {"label": "Comprar e distribuir licenças", "route": "rede", "description": "Compras do Master e gestão de revendas", "keywords": ["pix", "master", "submaster", "licenca"]},
   {"label": "Ver estoque", "route": "estoque", "description": "Licenças disponíveis", "keywords": ["licença", "saldo", "transferir"]},
   {"label": "Recarregar créditos", "route": "creditos", "description": "Pagamentos Pix e extrato", "keywords": ["pix", "saldo", "credito", "recarga"]},
+  {"label": "Pagar Master por Pix", "route": "pix-master", "description": "Comprar licenças via Pix diretamente ao Master", "keywords": ["master", "pix", "recebimento", "comprar", "licenças"]},
   {"label": "Ver pagamentos", "route": "financeiro", "description": "Histórico financeiro e faturas", "keywords": ["pix", "boleto", "cobrança"]},
   {"label": "Convidar revenda", "route": "rede", "description": "Cadastrar participantes da rede", "keywords": ["convite", "link", "master", "novo", "revendedor"]},
   {"label": "Gerenciar servidores", "route": "servidores", "description": "Origem e disponibilidade do conteúdo", "keywords": ["url", "link", "iptv"]},

@@ -1,13 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../api.js';
+import { toCents } from '@deltatv/ui/money';
 import { qrMatrix } from '../qr.js';
 
 const money=cents=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(cents||0)/100);
-const centsOf=input=>{
-  const clean=String(input).trim().replace(',','.');
-  if(!/^\d+([.]\d{1,2})?$/.test(clean))return 0;
-  const [a,b='']=clean.split('.');return Number(a)*100+Number(b.padEnd(2,'0'));
-};
+const centsOf = input => toCents(input);
 const statusLabel={creating:'Preparando cobrança',pending:'Aguardando Pix',paid:'Licenças entregues',review:'Pagamento em análise',expired:'Expirado',cancelled:'Cancelado',refunded:'Devolvido'};
 function Qr({text}){
   const matrix=useMemo(()=>{try{return qrMatrix(text);}catch{return null;}},[text]);
@@ -73,8 +70,8 @@ export default function MasterPix({account,policy,onChanged}){
       'Conta validada e recebimento Pix ativado.');
     if(r){setToken('');setWebhookSecret('');setCurrentPassword('');}
   };
-  const savePrice=()=>action(()=>api('/partner/network/master-pix/prices',{method:'PUT',body:{months:Number(priceForm.months),unitPriceCents:centsOf(priceForm.price),active:true}}),
-    'Preço Pix publicado para suas revendas.');
+  const savePrice=()=>{ if (!(centsOf(priceForm.price) > 0)) { setError('Informe um preço válido em reais. Ex.: 1.234,56.'); return; } return action(()=>api('/partner/network/master-pix/prices',{method:'PUT',body:{months:Number(priceForm.months),unitPriceCents:centsOf(priceForm.price),active:true}}),
+    'Preço Pix publicado para suas revendas.'); };
   const offer=offers.find(p=>String(p.months)===months)||offers[0];
   const count=Number(quantity),total=Number(offer?.unitPriceCents||0)*count;
   const valid=Number.isSafeInteger(count)&&count>0&&Number.isSafeInteger(total)&&total>0;
@@ -123,7 +120,7 @@ export default function MasterPix({account,policy,onChanged}){
         <div className="row" style={{gap:10,alignItems:'end',flexWrap:'wrap'}}>
           <label>Duração (meses)<input type="number" min="1" max="120" value={priceForm.months} onChange={e=>setPriceForm(v=>({...v,months:e.target.value}))}/></label>
           <label>Preço por licença (R$)<input inputMode="decimal" value={priceForm.price} onChange={e=>setPriceForm(v=>({...v,price:e.target.value}))}/></label>
-          <button className="btn primary" disabled={busy||!centsOf(priceForm.price)} onClick={savePrice}>Salvar oferta Pix</button>
+          <button className="btn primary" disabled={busy||!(centsOf(priceForm.price) > 0)} onClick={savePrice}>Salvar oferta Pix</button>
         </div>
         {prices.length>0&&<div className="table-wrap"><table><thead><tr><th>Duração</th><th>Preço Pix</th><th>Situação</th><th></th></tr></thead><tbody>{prices.map(p=><tr key={p.months}><td>{p.months} meses</td><td>{money(p.unitPriceCents)}</td><td>{p.active?'Ativo':'Pausado'}</td><td><button className="btn sm" disabled={busy} onClick={()=>action(()=>api('/partner/network/master-pix/prices',{method:'PUT',body:{months:p.months,unitPriceCents:Number(p.unitPriceCents),active:!p.active}}),'Oferta atualizada.')}>{p.active?'Pausar':'Ativar'}</button></td></tr>)}</tbody></table></div>}
       </div>

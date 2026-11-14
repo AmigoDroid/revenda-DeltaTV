@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api.js";
-import EasyStart from "../EasyStart.jsx";
+import EasyStart from "@deltatv/ui/EasyStart";
 import { Icon } from "../icons.jsx";
 import { usePortal } from "../portal.jsx";
 import { Badge, fmtDate, fmtMoney, useList, useLoad } from "../ui.jsx";

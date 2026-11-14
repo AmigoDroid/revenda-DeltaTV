@@ -2,7 +2,7 @@ import React from 'react';
 import './operation-center.css';
 export const CENTER_CONFIG = {
   pagamentos: {title:'Pagamentos',intro:'Tudo sobre Pix, saldo, faturas e compras na sua rede.', entries:[
-    ['financeiro','Faturas e pagamentos','Pagamentos e histórico financeiro'],['creditos','Créditos e Pix','Recarregar saldo e consultar extrato'],['rede','Pix do Master e vendas','Comprar licenças via Pix e acompanhar a rede']]},
+    ['financeiro','Faturas e pagamentos','Pagamentos e histórico financeiro'],['creditos','Créditos e Pix','Recarregar saldo e consultar extrato'],['pix-master','Pix dos Masters','Compras, vendas e recebimentos de licenças']]},
   dispositivos: {title:'Dispositivos',intro:'Encontre a TV, acompanhe o cliente e resolva problemas.',entries:[
     ['dispositivos','Minhas TVs','Consultar, editar e verificar dispositivos'],['clientes','Clientes','Dados e vencimentos'],['suporte','Resolver problema','Diagnóstico de conexão']]},
   licenciamento: {title:'Licenças',intro:'Controle o estoque e as licenças em uso.',entries:[

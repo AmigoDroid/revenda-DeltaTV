@@ -1,4 +1,4 @@
-import TaskFinder from "./TaskFinder.jsx";
+import TaskFinder from "@deltatv/ui/TaskFinder";
 import { TASKS } from "./task-directory.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { logout } from "./api.js";
@@ -6,9 +6,8 @@ import { Icon, Mark } from "./icons.jsx";
 import { PortalProvider, usePortal } from "./portal.jsx";
 import Home from "./pages/Home.jsx";
 import { OperationCenter, CENTER_CONFIG } from "./OperationCenter.jsx";
-import { useSimpleMode } from "./useSimpleMode.js";
-import { EasyPageGuide } from "./EasyStart.jsx";
-import "./easy-start.css";
+import { useSimpleMode } from "@deltatv/ui/useSimpleMode";
+import { EasyPageGuide } from "@deltatv/ui/EasyStart";
 import WhiteLabelApps from "./WhiteLabelApps.jsx";
 import Clients from "./pages/Clients.jsx";
 import SupportCenter from "./SupportCenter.jsx";
@@ -19,6 +18,7 @@ import Codes from "./pages/Codes.jsx";
 import Servers from "./pages/Servers.jsx";
 import ServerMonitor from "./pages/ServerMonitor.jsx";
 import Billing from "./pages/Billing.jsx";
+import FinanceiroMaster from "./pages/FinanceiroMaster.jsx";
 import Credits from "./pages/Credits.jsx";
 import Network from "./pages/Network.jsx";
 import WebAccess from "./pages/WebAccess.jsx";
@@ -50,17 +50,18 @@ const NAV = [
   { id: "notificacoes", label: "Notificações", icon: "bell", page: Notifications, desc: "Avisos e comunicados da Delta TV." },
   { id: "loginhistory", label: "Histórico de login", icon: "history", page: LoginHistory, desc: "Veja seus acessos, IPs e dispositivos." },
   { id: "financeiro", label: "Financeiro", icon: "wallet", page: Billing, desc: "Mensalidades da parceria e pagamentos por Pix." },
+  { id: "pix-master", label: "Pix da minha rede", icon: "wallet", page: FinanceiroMaster, reseller: true, desc: "Vendas, compras Pix e recebimentos de licenças dos Masters." },
   { id: "conta", label: "Minha conta", icon: "user", page: ProfilePage, desc: "Dados pessoais, segurança, sessões, histórico e notificações." },
   { id: "ajuda", label: "Central de Ajuda", icon: "help", page: null, desc: "Guias e tutoriais interativos do painel." },
 ];
 // Menu por área: o dia a dia (clientes e TVs), o que vende (licenças), a ativação (códigos e servidores) e a conta.
-const SIMPLE_RESELLER = new Set(["central-pagamentos", "central-dispositivos", "central-licenciamento", "central-ativacao", "central-conta", "inicio", "suporte", "clientes", "dispositivos", "estoque", "rede", "codigos", "notificacoes", "ajuda", "conta"]);
+const SIMPLE_RESELLER = new Set(["central-pagamentos", "pix-master", "central-dispositivos", "central-licenciamento", "central-ativacao", "central-conta", "inicio", "suporte", "clientes", "dispositivos", "estoque", "rede", "codigos", "notificacoes", "ajuda", "conta"]);
 const GROUPS = [
   { label: null, ids: ["inicio"] },
-  { label: "Centrais de trabalho", ids: ["central-pagamentos", "central-dispositivos", "central-licenciamento", "central-ativacao", "central-conta"] },
+  { label: "Centrais de trabalho", ids: ["central-pagamentos", "pix-master", "central-dispositivos", "central-licenciamento", "central-ativacao", "central-conta"] },
   { label: "Atendimento", ids: ["suporte", "clientes"] },
   { label: "Comercial", ids: ["rede"] },
-  { label: "Ferramentas avançadas", ids: ["estoque", "creditos", "licencas", "codigos", "playerweb", "servidores", "monitoramento", "white-label", "aplicativos", "financeiro"] },
+  { label: "Ferramentas avançadas", ids: ["estoque", "creditos", "licencas", "codigos", "playerweb", "servidores", "monitoramento", "white-label", "aplicativos", "financeiro", "pix-master"] },
   { label: "Conta e suporte", ids: ["notificacoes", "loginhistory", "ajuda"] },
 ];
 const ACCOUNT = [
