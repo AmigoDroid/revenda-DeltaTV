@@ -1,0 +1,7 @@
+.delta3-hub form {display:grid;gap:12px;margin:12px 0}
+.delta3-hub label {display:grid;gap:6px;font-weight:600;font-size:.92rem}
+.delta3-hub input,.delta3-hub select {width:100%;max-width:100%;min-height:42px;box-sizing:border-box;padding:9px 11px;border:1px solid var(--border,#56657f);border-radius:9px;color:var(--text,#f2f6ff);background:var(--panel,#182239)}
+.delta3-hub input:focus-visible,.delta3-hub select:focus-visible {outline:3px solid #8eb6ff;outline-offset:2px}
+.delta3-hub .notice {padding:10px 14px;border:1px solid var(--border,#56657f);border-radius:9px}
+.delta3-hub .notice.error {border-color:#e87979}
+@media(max-width:600px){.delta3-hub .card{min-width:0}.delta3-hub .actions{flex-wrap:wrap}}

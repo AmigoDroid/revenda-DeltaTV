@@ -10,6 +10,8 @@ const optionalNumber=value=>value===""?null:Number(value);
 const inviteDescription=i=>`${i.uses}/${i.maxUses==null?"sem limite":i.maxUses} cadastros · ${i.expiresAt?`vence ${new Date(i.expiresAt).toLocaleDateString("pt-BR")}`:"sem vencimento"}`;
 export default function Network({go}) {
   const {me}=usePortal();
+  const [commissionRate,setCommissionRate]=useState("0"),[commissionChild,setCommissionChild]=useState("");
+  const [myCommissions,setMyCommissions]=useState([]),[mySaas,setMySaas]=useState([]);
   const [network,setNetwork]=useState(null),[prices,setPrices]=useState([]),[invites,setInvites]=useState([]),[sales,setSales]=useState([]),[resources,setResources]=useState(null),[tree,setTree]=useState([]),[summary,setSummary]=useState(null);
   const [errors,setErrors]=useState(""),[message,setMessage]=useState(""),[busy,setBusy]=useState(false),[newLink,setNewLink]=useState("");
   const [inviteUses,setInviteUses]=useState(""),[inviteDays,setInviteDays]=useState("");
@@ -25,6 +27,10 @@ export default function Network({go}) {
   const reload=useCallback(async()=>{
     const [n,rs]=await Promise.all([api(`/partner/network?page=${childPage}&pageSize=50`),api("/partner/network/resources")]);
     setNetwork(n);setResources(rs);
+    Promise.allSettled([api("/partner/commerce/commissions"),api("/partner/commerce/master-contract")]).then(r=>{
+      if(r[0].status==="fulfilled")setMyCommissions(r[0].value.data||[]);
+      if(r[1].status==="fulfilled")setMySaas(r[1].value.data||[]);
+    });
     const key=`delta-network-checkout:${n.account.id}`;
     try {const cached=JSON.parse(sessionStorage.getItem(key)||"null");setPendingPurchase(cached?.key?cached:null);} catch {sessionStorage.removeItem(key);}
     if(n.account?.distributionRole==="master") {
@@ -117,6 +123,26 @@ export default function Network({go}) {
       <div className="row" style={{gap:20,flexWrap:"wrap"}}><strong>{network.account.role}</strong><span>Créditos: <b>{network.creditBalance}</b></span><span>Licenças em estoque: <b>{network.stock.reduce((n,s)=>n+Number(s.quantity),0)}</b></span>{master&&<span>Revendas diretas: <b>{network.childrenTotal??network.children.length}</b></span>}</div>
       {errors&&<p role="alert" className="error">{errors}</p>}{message&&<p role="status" style={{color:"var(--ok)"}}>{message}</p>}
     </div>
+    <div className="card"><h3>Assinatura de acesso ao DeltaTV</h3>
+      {mySaas.length?<><strong>{mySaas[0].planName}</strong><p className="muted">Modelo: {mySaas[0].billingMode} · Estado comercial: {mySaas[0].state} · Ativações incluídas: {mySaas[0].includedSlots??"Sem limite"}.</p></>:
+       <p className="muted">Nenhum novo contrato comercial DeltaTV 3.0 cadastrado. Seu plano anterior permanece válido.</p>}
+      <p className="muted" style={{fontSize:12}}>Os contratos comerciais desta versão não modificam automaticamente seu acesso ou as licenças já ativas.</p>
+    </div>
+    {master&&network.policy.canSell&&<div className="card"><h3>Comissões da minha rede</h3>
+      <p className="muted">Configure o percentual em créditos de uma venda realizada por uma revenda direta. O Superadmin determina o teto máximo e a comissão é financiada pelos créditos da venda confirmada.</p>
+      <form onSubmit={e=>{e.preventDefault();run(()=>api(`/partner/commerce/commissions/children/${commissionChild}`,{
+        method:"PUT",body:{basisPoints:Math.round(Number(commissionRate)*100)}
+      }),"Percentual de comissão configurado.");}} className="row" style={{gap:10,alignItems:"end",flexWrap:"wrap"}}>
+        <label>Revenda direta<select required value={commissionChild} onChange={e=>setCommissionChild(e.target.value)}><option value="">Selecione…</option>
+          {network.children.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
+        </select></label>
+        <label>Minha comissão (%)<input required type="number" min="0" max="100" step="0.01" value={commissionRate} onChange={e=>setCommissionRate(e.target.value)}/></label>
+        <button type="submit" className="btn primary" disabled={busy||!commissionChild}>Salvar percentual</button>
+      </form>
+      <h4>Comissões recebidas</h4>{myCommissions.length?<div className="table-wrap"><table><thead><tr><th>Venda</th><th>Créditos</th><th>Percentual</th></tr></thead><tbody>
+        {myCommissions.map(c=><tr key={c.id}><td>{String(c.saleId).slice(0,8)}…</td><td>{c.credits}</td><td>{(c.basisPoints/100).toFixed(2)}%</td></tr>)}
+      </tbody></table></div>:<p className="muted">Nenhuma comissão liquidada ainda.</p>}
+    </div>}
     {(master || network.parent) && <div className="card"><h3>Pagamentos via Pix</h3><p className="muted">As compras e recebimentos por Pix ficam na área Financeira. Os convites e a hierarquia continuam aqui.</p><button type="button" className="btn primary" onClick={()=>go?.('pix-master')}>Abrir Pix da minha rede</button></div>}
     {network.parent&&<div className="card">
       <h3>Comprar com créditos (opcional)</h3>

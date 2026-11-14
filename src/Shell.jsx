@@ -9,7 +9,7 @@ import { OperationCenter, CENTER_CONFIG } from "./OperationCenter.jsx";
 import { useSimpleMode } from "@deltatv/ui/useSimpleMode";
 import { EasyPageGuide } from "@deltatv/ui/EasyStart";
 import WhiteLabelApps from "./WhiteLabelApps.jsx";
-import Clients from "./pages/Clients.jsx";
+import Clients from "./pages/Customers3.jsx";
 import SupportCenter from "./SupportCenter.jsx";
 import Devices from "./pages/Devices.jsx";
 import { StockPortal } from "./pages/Stock.jsx";
@@ -35,7 +35,7 @@ const NAV = [
   ...Object.entries(CENTER_CONFIG).map(([id,c])=>({id:`central-${id}`,label:c.title,icon:({pagamentos:"wallet",dispositivos:"tv",licenciamento:"ticket",ativacao:"key",conta:"user"})[id],page:OperationCenter,desc:c.intro,center:true})),
   { id: "inicio", label: "Início", icon: "home", page: Home, desc: "O que precisa da sua atenção hoje." },
   { id: "suporte", label: "Resolver problema da TV", icon: "help", page: SupportCenter, desc: "Diagnostique um cliente sem interpretar logs ou códigos técnicos." },
-  { id: "clientes", label: "Clientes", icon: "users", page: Clients, reseller: true, desc: "Nome, contato, valor e vencimento de cada TV. Cadastre um MAC antes de ativar ou complete os dados de uma TV já ativada." },
+  { id: "clientes", label: "Clientes", icon: "users", page: Clients, reseller: true, desc: "Cadastre pessoas sem MAC, gerencie planos com várias TVs e consulte os cadastros antigos na mesma área." },
   { id: "dispositivos", label: "Dispositivos", icon: "tv", page: Devices, desc: "Busque uma TV pelo MAC, edite as listas dela e gerencie as ativações." },
   { id: "rede", label: "Minha rede de revendas", icon: "users", page: Network, reseller: true, desc: "Convide revendas, compre licenças do Master e gerencie sua rede." },
   { id: "estoque", label: "Estoque", icon: "box", page: StockPortal, reseller: true, desc: "Licenças disponíveis. Aplique ao MAC de um cliente (em Dispositivos) ou transfira para outro revendedor." },
@@ -55,13 +55,14 @@ const NAV = [
   { id: "ajuda", label: "Central de Ajuda", icon: "help", page: null, desc: "Guias e tutoriais interativos do painel." },
 ];
 // Menu por área: o dia a dia (clientes e TVs), o que vende (licenças), a ativação (códigos e servidores) e a conta.
-const SIMPLE_RESELLER = new Set(["central-pagamentos", "pix-master", "central-dispositivos", "central-licenciamento", "central-ativacao", "central-conta", "inicio", "suporte", "clientes", "dispositivos", "estoque", "rede", "codigos", "notificacoes", "ajuda", "conta"]);
+const SIMPLE_RESELLER = new Set(["central-ativacao", "inicio", "suporte", "clientes", "dispositivos", "estoque", "rede", "codigos", "notificacoes", "ajuda", "conta"]);
 const GROUPS = [
   { label: null, ids: ["inicio"] },
-  { label: "Centrais de trabalho", ids: ["central-pagamentos", "pix-master", "central-dispositivos", "central-licenciamento", "central-ativacao", "central-conta"] },
-  { label: "Atendimento", ids: ["suporte", "clientes"] },
+  { label: "Acesso rápido", ids: ["clientes", "dispositivos", "central-ativacao"] },
+  { label: "Atendimento", ids: ["suporte"] },
   { label: "Comercial", ids: ["rede"] },
-  { label: "Ferramentas avançadas", ids: ["estoque", "creditos", "licencas", "codigos", "playerweb", "servidores", "monitoramento", "white-label", "aplicativos", "financeiro", "pix-master"] },
+  { label: "Licenças e financeiro", ids: ["estoque", "creditos", "licencas", "financeiro", "pix-master"] },
+  { label: "Aplicativos e servidores", ids: ["codigos", "playerweb", "servidores", "monitoramento", "white-label", "aplicativos"] },
   { label: "Conta e suporte", ids: ["notificacoes", "loginhistory", "ajuda"] },
 ];
 const ACCOUNT = [
@@ -187,6 +188,7 @@ function Layout({ user }) {
           <button type="button" className="icon menu-btn" aria-label="Abrir menu" aria-expanded={open} onClick={() => setOpen(true)}><Icon name="menu" size={22} /></button>
           <div className="topbar-context"><span className="topbar-eyebrow">PAINEL DA REVENDA</span><strong className="topbar-title">{cur.label}</strong></div>
           <div className="topbar-tools">
+            {!blocked && <button className="btn primary sm" type="button" onClick={()=>{sessionStorage.setItem("deltatv-quick-activate","1");go("clientes");window.dispatchEvent(new Event("deltatv-open-activation"));}}>Ativar TV</button>}
             <button type="button" className="easy-mode-button" aria-pressed={!simpleMode} onClick={() => setSimpleMode((v) => !v)}>{simpleMode ? "Modo simples · mostrar tudo" : "Modo completo · simplificar"}</button>
             <button type="button" className="btn sm" data-help-target="context-help" onClick={() => window.dispatchEvent(new CustomEvent("deltatv-help-context", { detail: { screen: cur.id } }))}>? Ajuda</button>
             {!blocked && <button type="button" className="topbar-notify" aria-label={notificationCount > 0 ? `${notificationCount} notificações não lidas` : "Abrir notificações"} title="Notificações" onClick={() => go("notificacoes")}>
