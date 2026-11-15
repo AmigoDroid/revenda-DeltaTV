@@ -128,6 +128,11 @@ export default function Network({go}) {
        <p className="muted">Nenhum novo contrato comercial DeltaTV 3.0 cadastrado. Seu plano anterior permanece válido.</p>}
       <p className="muted" style={{fontSize:12}}>Os contratos comerciais desta versão não modificam automaticamente seu acesso ou as licenças já ativas.</p>
     </div>
+    {master&&!network.account.parentPartnerId&&<div className="card">
+      <h3>Emissão própria de licenças</h3>
+      <p className="muted">O Master principal autorizado pelo Superadmin pode emitir licenças no seu estoque. A emissão e o histórico ficam concentrados em Licenças → Estoque.</p>
+      <button type="button" className="btn primary" onClick={()=>go?.("estoque")}>Abrir estoque e emissão</button>
+    </div>}
     {master&&network.policy.canSell&&<div className="card"><h3>Comissões da minha rede</h3>
       <p className="muted">Configure o percentual em créditos de uma venda realizada por uma revenda direta. O Superadmin determina o teto máximo e a comissão é financiada pelos créditos da venda confirmada.</p>
       <form onSubmit={e=>{e.preventDefault();run(()=>api(`/partner/commerce/commissions/children/${commissionChild}`,{

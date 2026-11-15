@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../api.js";
 import { BuyStock } from "./Pix.jsx";
+import MasterSelfIssuance from "./MasterSelfIssuance.jsx";
 import { buyWithCredit, creditChanged, creditsLabel, useCredit } from "../credit.js";
 import { Empty, Field, LoadError, Modal, Pager, Table, fmtDate, fmtDateTime, fmtMoney, useAction, useLoad, useUi } from "../ui.jsx";
 
@@ -55,6 +56,7 @@ export function StockPortal() {
   if (!data) return error ? <LoadError error={error} onRetry={reload} /> : <p className="muted">Carregando…</p>;
   return (
     <section>
+      <MasterSelfIssuance onIssued={changed}/>
       <Balances balances={data.balances} />
       <div className="actions left" style={{ marginTop: 12 }}>
         <button className="btn" disabled={!data.balances.length} onClick={() => setTransfer(true)}>Transferir para outro revendedor</button>
