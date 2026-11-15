@@ -1,143 +1,338 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api.js";
-import { usePortal } from "../portal.jsx";
+import { Icon, Mark } from "../icons.jsx";
+import LicenseTrading from "./LicenseTrading.jsx";
+import "./network-dashboard.css";
 
-const resourceLabels={servers:"Servidores IPTV",codes:"Códigos de ativação",devices:"Gerenciar TVs",clients:"Clientes",stock:"Estoque de licenças",credits:"Créditos e compras",web:"Player Web",white_label:"Aplicativos personalizados",remote:"Controle remoto"};
-const waInvite=(url,name)=>`https://wa.me/?text=${encodeURIComponent(`Olá! Cadastre sua revenda DeltaTV na rede de ${name}: ${url}`)}`;
-const optionalNumber=value=>value===""?null:Number(value);
-const inviteDescription=i=>`${i.uses}/${i.maxUses==null?"sem limite":i.maxUses} cadastros · ${i.expiresAt?`vence ${new Date(i.expiresAt).toLocaleDateString("pt-BR")}`:"sem vencimento"}`;
-export default function Network({go}) {
-  const {me}=usePortal();
-  const [commissionRate,setCommissionRate]=useState("0"),[commissionChild,setCommissionChild]=useState("");
-  const [myCommissions,setMyCommissions]=useState([]),[mySaas,setMySaas]=useState([]);
-  const [network,setNetwork]=useState(null),[invites,setInvites]=useState([]),[resources,setResources]=useState(null),[tree,setTree]=useState([]),[summary,setSummary]=useState(null);
-  const [errors,setErrors]=useState(""),[message,setMessage]=useState(""),[busy,setBusy]=useState(false),[newLink,setNewLink]=useState("");
-  const [inviteUses,setInviteUses]=useState(""),[inviteDays,setInviteDays]=useState("");
-  const [childId,setChildId]=useState(null),[childResources,setChildResources]=useState(null);
-  const [childPage,setChildPage]=useState(1),[treePage,setTreePage]=useState(1),[treeTotal,setTreeTotal]=useState(0);
-  const reload=useCallback(async()=>{
-    const [n,rs]=await Promise.all([api(`/partner/network?page=${childPage}&pageSize=50`),api("/partner/network/resources")]);
-    setNetwork(n);setResources(rs);
-    Promise.allSettled([api("/partner/commerce/commissions"),api("/partner/commerce/master-contract")]).then(r=>{
-      if(r[0].status==="fulfilled")setMyCommissions(r[0].value.data||[]);
-      if(r[1].status==="fulfilled")setMySaas(r[1].value.data||[]);
-    });
-    if(n.account?.distributionRole==="master") {
-      const requests={
-        invites:n.policy.canInvite?api("/partner/network/invites"):Promise.resolve({data:[]}),
-        tree:n.policy.canInvite?api(`/partner/network/tree?page=${treePage}&pageSize=100`):Promise.resolve({data:[],total:0}),
-        summary:n.policy.canInvite?api("/partner/network/summary"):Promise.resolve(null),
-      };
-      const results=await Promise.allSettled(Object.values(requests));
-      const value=(i,fallback)=>results[i].status==="fulfilled"?results[i].value:fallback;
-      setInvites(value(0,{data:[]}).data||[]);
-      const treeResult=value(1,{data:[],total:0});setTree(treeResult.data||[]);setTreeTotal(treeResult.total||0);
-      setSummary(value(2,null));
-      const unexpected=results.find(r=>r.status==="rejected"&&r.reason?.status!==403);
-      if(unexpected)setErrors(unexpected.reason?.message||"Não foi possível carregar parte da rede.");
-    } else {setInvites([]);setTree([]);setSummary(null);setTreeTotal(0);}
-  },[childPage,treePage]);
-  useEffect(()=>{reload().catch(e=>setErrors(e.message));},[reload]);
-  useEffect(()=>{
-    if(!childId||!network?.policy.canInvite) {setChildResources(null);return;}
-    api(`/partner/network/children/${childId}/resources`).then(setChildResources).catch(e=>setErrors(e.message));
-  },[childId,network?.policy.canInvite]);
-  const run=async(fn,ok)=>{
-    if(busy)return;
-    setBusy(true);setErrors("");setMessage("");
-    try { const result=await fn(); if(ok)setMessage(ok);await reload();return result; }
-    catch(e){setErrors(e.message||"Não foi possível concluir.");return null;}
-    finally{setBusy(false);}
+import { allowedNetworkSections } from "./network-navigation.js";
+
+const RESOURCE_LABELS = {
+  servers: "Servidores IPTV", codes: "Códigos de ativação", devices: "Gerenciar TVs", clients: "Clientes",
+  stock: "Estoque de licenças", credits: "Créditos e compras", web: "Player Web",
+  white_label: "Aplicativos personalizados", remote: "Controle remoto",
+};
+const optionalNumber = value => value === "" ? null : Number(value);
+const formatAmount = value => Number(value || 0).toLocaleString("pt-BR");
+const formatDate = value => value ? new Date(value).toLocaleDateString("pt-BR") : "Sem vencimento";
+const waInvite = (url, name) => `https://wa.me/?text=${encodeURIComponent(`Olá! Cadastre sua revenda DeltaTV na rede de ${name}: ${url}`)}`;
+const describeInvite = invite => `${invite.uses}/${invite.maxUses == null ? "sem limite" : invite.maxUses} cadastros · ${formatDate(invite.expiresAt)}`;
+
+export function allowedNetworkSections(network) {
+  if (!network) return [NETWORK_SECTIONS[0]];
+  const master = network.account?.distributionRole === "master";
+  return NETWORK_SECTIONS.filter(section => {
+    if (section.access === "all") return true;
+    if (section.access === "master") return master;
+    if (section.access === "invite") return master && Boolean(network.policy?.canInvite);
+    if (section.access === "sell") return master && Boolean(network.policy?.canSell);
+    if (section.access === "trade") return master || Boolean(network.parent);
+    return false;
+  });
+}
+
+function SectionHeading({ eyebrow, title, description, action }) {
+  return <header className="network-section-heading">
+    <div><span className="network-eyebrow">{eyebrow}</span><h2>{title}</h2><p>{description}</p></div>
+    {action && <div className="network-section-action">{action}</div>}
+  </header>;
+}
+function EmptyState({ icon = "users", title, description, action }) {
+  return <div className="network-empty" role="status"><span className="network-empty-symbol"><Icon name={icon} size={23} /></span><h3>{title}</h3><p>{description}</p>{action}</div>;
+}
+function Stat({ icon, label, value, detail }) {
+  return <div className="network-stat"><span className="network-stat-symbol"><Icon name={icon} size={18}/></span><small>{label}</small><strong>{value}</strong>{detail && <span>{detail}</span>}</div>;
+}
+
+/** Dashboard independente: o Shell principal é substituído enquanto /rede/* estiver ativo. */
+export default function Network({ go, section = "resumo", user }) {
+  const [network, setNetwork] = useState(null);
+  const [resources, setResources] = useState(null);
+  const [summary, setSummary] = useState(null);
+  const [invites, setInvites] = useState([]);
+  const [tree, setTree] = useState([]);
+  const [treeTotal, setTreeTotal] = useState(0);
+  const [mySaas, setMySaas] = useState([]);
+  const [myCommissions, setMyCommissions] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [compact, setCompact] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 860px)").matches);
+  const sidebarRef = useRef(null);
+  const openMenuRef = useRef(null);
+  const previousSection = useRef(section);
+  const [inviteUses, setInviteUses] = useState("");
+  const [inviteDays, setInviteDays] = useState("");
+  const [newLink, setNewLink] = useState("");
+  const [childPage, setChildPage] = useState(1);
+  const [treePage, setTreePage] = useState(1);
+  const [childQuery, setChildQuery] = useState("");
+  const [childId, setChildId] = useState("");
+  const [childResources, setChildResources] = useState(null);
+  const [commissionChild, setCommissionChild] = useState("");
+  const [commissionRate, setCommissionRate] = useState("0");
+
+  const reload = useCallback(async () => {
+    const [n, rs] = await Promise.all([
+      api(`/partner/network?page=${childPage}&pageSize=50`),
+      api("/partner/network/resources"),
+    ]);
+    setNetwork(n);
+    setResources(rs);
+    const master = n.account?.distributionRole === "master";
+    const pending = [
+      api("/partner/commerce/commissions"),
+      api("/partner/commerce/master-contract"),
+      master && n.policy?.canInvite ? api("/partner/network/invites") : Promise.resolve({ data: [] }),
+      master && n.policy?.canInvite ? api(`/partner/network/tree?page=${treePage}&pageSize=100`) : Promise.resolve({ data: [], total: 0 }),
+      master && n.policy?.canInvite ? api("/partner/network/summary") : Promise.resolve(null),
+    ];
+    const values = await Promise.allSettled(pending);
+    const result = (index, fallback) => values[index].status === "fulfilled" ? values[index].value : fallback;
+    setMyCommissions(result(0, { data: [] })?.data || []);
+    setMySaas(result(1, { data: [] })?.data || []);
+    setInvites(result(2, { data: [] })?.data || []);
+    const hierarchy = result(3, { data: [], total: 0 });
+    setTree(hierarchy?.data || []);
+    setTreeTotal(hierarchy?.total || 0);
+    setSummary(result(4, null));
+    const failed = values.find(value => value.status === "rejected" && value.reason?.status !== 403);
+    if (failed) setError("Parte das informações não pôde ser carregada. Você pode tentar atualizar a página.");
+  }, [childPage, treePage]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    reload().catch(err => { if (!cancelled) setError(err.message || "Falha ao carregar a rede."); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [reload]);
+  useEffect(() => {
+    if (!childId || !network?.policy?.canInvite) { setChildResources(null); return; }
+    let active = true;
+    api(`/partner/network/children/${childId}/resources`).then(data => { if (active) setChildResources(data); })
+      .catch(err => { if (active) setError(err.message || "Não foi possível carregar as permissões."); });
+    return () => { active = false; };
+  }, [childId, network?.policy?.canInvite]);
+  useEffect(() => {
+    setMenuOpen(false);
+    window.scrollTo(0, 0);
+    if (previousSection.current !== section && compact) {
+      requestAnimationFrame(() => document.getElementById("network-main")?.focus());
+    }
+    previousSection.current = section;
+  }, [section]);
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 860px)");
+    const changed = event => setCompact(event.matches);
+    setCompact(media.matches);
+    media.addEventListener("change", changed);
+    return () => media.removeEventListener("change", changed);
+  }, []);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const close = event => {
+      if (event.key === "Escape") { setMenuOpen(false); openMenuRef.current?.focus(); }
+      if (event.key === "Tab" && compact && sidebarRef.current) {
+        const buttons = [...sidebarRef.current.querySelectorAll('button:not(:disabled)')];
+        if (!buttons.length) return;
+        const first = buttons[0], last = buttons[buttons.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      }
+    };
+    document.addEventListener("keydown", close);
+    const previousOverflow = document.body.style.overflow;
+    if (compact) { document.body.style.overflow = "hidden"; sidebarRef.current?.querySelector("button")?.focus(); }
+    return () => { document.removeEventListener("keydown", close); document.body.style.overflow = previousOverflow; };
+  }, [menuOpen, compact]);
+
+  const execute = async (operation, success) => {
+    if (busy) return null;
+    setBusy(true); setError(""); setNotice("");
+    try { const result = await operation(); if (success) setNotice(success); await reload(); return result; }
+    catch (err) { setError(err.message || "Não foi possível concluir esta operação."); return null; }
+    finally { setBusy(false); }
   };
-  if(!network)return <section className="card">{errors||"Carregando sua rede…"}</section>;
-  const master=network.account.distributionRole==="master";
-  const invite=async()=>{
-    const r=await run(()=>api("/partner/network/invites",{method:"POST",body:{daysValid:optionalNumber(inviteDays),maxUses:optionalNumber(inviteUses)}}),"Link criado. Compartilhe com seus revendedores.");
-    if(r)setNewLink(r.url);
+  const changeSection = id => go(`rede/${id === "resumo" ? "" : id}`.replace(/\/$/, ""));
+  const sections = useMemo(() => allowedNetworkSections(network), [network]);
+  const current = sections.find(entry => entry.id === section) || sections[0];
+  const active = current?.id || "resumo";
+  const master = network?.account?.distributionRole === "master";
+  const canInvite = master && Boolean(network?.policy?.canInvite);
+  const canSell = master && Boolean(network?.policy?.canSell);
+  const directChildren = network?.children || [];
+  const filteredChildren = directChildren.filter(child => `${child.name} ${child.contact_email || ""}`.toLocaleLowerCase("pt-BR").includes(childQuery.toLocaleLowerCase("pt-BR")));
+  const stockTotal = (network?.stock || []).reduce((sum, entry) => sum + Number(entry.quantity || 0), 0);
+  const contract = mySaas[0];
+  const selectedChild = directChildren.find(child => String(child.id) === String(childId));
+
+  const createInvite = async event => {
+    event.preventDefault();
+    const result = await execute(() => api("/partner/network/invites", {
+      method: "POST", body: { daysValid: optionalNumber(inviteDays), maxUses: optionalNumber(inviteUses) },
+    }), "Convite criado. Compartilhe o link abaixo.");
+    if (result?.url) setNewLink(result.url);
   };
-  const copyInvite=async()=>{
-    try{await navigator.clipboard.writeText(newLink);setMessage("Link copiado. Agora envie para a pessoa que deseja cadastrar.");}
-    catch{window.prompt("Copie o link para enviar:",newLink);}
+  const copyLink = async () => {
+    try { await navigator.clipboard.writeText(newLink); setNotice("Link copiado. Agora você pode compartilhá-lo."); }
+    catch { window.prompt("Copie o link de convite:", newLink); }
   };
-  const updateChild=async(id,verb)=>run(()=>api(`/partner/network/children/${id}/${verb}`,{method:"POST",body:{}}),verb==="approve"?"Cadastro aprovado.":"Revenda suspensa.");
-  const promoteChild=async(id)=>{
-    if(!window.confirm("Promover esta revenda a Submaster? Ela poderá criar uma rede subordinada dentro dos seus limites."))return;
-    const p=network.policy;
-    await run(()=>api(`/partner/network/children/${id}/promote`,{method:"POST",body:{policy:{
-      canInvite:p.canInvite,canSell:p.canSell,canPromote:false,maxChildren:p.maxChildren,maxDepth:p.maxDepth,
-    }}}),"Revenda promovida a Submaster.");
+  const changeChild = (id, action) => execute(
+    () => api(`/partner/network/children/${id}/${action}`, { method: "POST", body: {} }),
+    action === "approve" ? "Revenda aprovada." : action === "reject" ? "Cadastro recusado." : "Revenda suspensa.",
+  );
+  const promote = async child => {
+    if (!window.confirm(`Promover ${child.name} a Submaster? Ele poderá criar sua rede conforme as permissões concedidas.`)) return;
+    const policy = network.policy;
+    await execute(() => api(`/partner/network/children/${child.id}/promote`, {
+      method: "POST", body: { policy: { canInvite: policy.canInvite, canSell: policy.canSell,
+        canPromote: false, maxChildren: policy.maxChildren, maxDepth: policy.maxDepth } },
+    }), "Revenda promovida a Submaster.");
   };
-  const updateResource=async(resource,enabled,limit)=>{
-    const updated=await run(()=>api(`/partner/network/children/${childId}/resources`,{method:"PUT",body:{resource,enabled,limit}}),"Permissão atualizada.");
-    if(updated)setChildResources(await api(`/partner/network/children/${childId}/resources`));
+  const updateResource = async (resource, enabled, limit) => {
+    const result = await execute(() => api(`/partner/network/children/${childId}/resources`, {
+      method: "PUT", body: { resource, enabled, limit },
+    }), "Permissão atualizada.");
+    if (result) setChildResources(await api(`/partner/network/children/${childId}/resources`));
   };
-  return <section style={{display:"grid",gap:16}}>
-    <div className="card">
-      <h2 style={{marginTop:0}}>Minha rede de revendas</h2>
-      <p className="muted">{master?"Você pode convidar revendas e administrar a hierarquia. Vendas e preços ficam na central de Licenças.":network.parent?`Sua revenda pertence à rede de ${network.parent.name}. As compras de licenças ficam na central comercial.`:"Sua conta é uma revenda independente. Somente o Superadmin pode habilitar o modo Master."}</p>
-      <div className="row" style={{gap:20,flexWrap:"wrap"}}><strong>{network.account.role}</strong><span>Créditos: <b>{network.creditBalance}</b></span><span>Licenças em estoque: <b>{network.stock.reduce((n,s)=>n+Number(s.quantity),0)}</b></span>{master&&<span>Revendas diretas: <b>{network.childrenTotal??network.children.length}</b></span>}</div>
-      {errors&&<p role="alert" className="error">{errors}</p>}{message&&<p role="status" style={{color:"var(--ok)"}}>{message}</p>}
-    </div>
-    <div className="card"><h3>Assinatura de acesso ao DeltaTV</h3>
-      {mySaas.length?<><strong>{mySaas[0].planName}</strong><p className="muted">Modelo: {mySaas[0].billingMode} · Estado comercial: {mySaas[0].state} · Ativações incluídas: {mySaas[0].includedSlots??"Sem limite"}.</p></>:
-       <p className="muted">Nenhum novo contrato comercial DeltaTV 3.0 cadastrado. Seu plano anterior permanece válido.</p>}
-      <p className="muted" style={{fontSize:12}}>Os contratos comerciais desta versão não modificam automaticamente seu acesso ou as licenças já ativas.</p>
-    </div>
-    {master&&!network.account.parentPartnerId&&<div className="card">
-      <h3>Emissão própria de licenças</h3>
-      <p className="muted">O Master principal autorizado pelo Superadmin pode emitir licenças no seu estoque. A emissão e o histórico ficam concentrados em Licenças → Estoque.</p>
-      <button type="button" className="btn primary" onClick={()=>go?.("estoque")}>Abrir estoque e emissão</button>
-    </div>}
-    {master&&network.policy.canSell&&<div className="card"><h3>Comissões da minha rede</h3>
-      <p className="muted">Configure o percentual em créditos de uma venda realizada por uma revenda direta. O Superadmin determina o teto máximo e a comissão é financiada pelos créditos da venda confirmada.</p>
-      <form onSubmit={e=>{e.preventDefault();run(()=>api(`/partner/commerce/commissions/children/${commissionChild}`,{
-        method:"PUT",body:{basisPoints:Math.round(Number(commissionRate)*100)}
-      }),"Percentual de comissão configurado.");}} className="row" style={{gap:10,alignItems:"end",flexWrap:"wrap"}}>
-        <label>Revenda direta<select required value={commissionChild} onChange={e=>setCommissionChild(e.target.value)}><option value="">Selecione…</option>
-          {network.children.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
-        </select></label>
-        <label>Minha comissão (%)<input required type="number" min="0" max="100" step="0.01" value={commissionRate} onChange={e=>setCommissionRate(e.target.value)}/></label>
-        <button type="submit" className="btn primary" disabled={busy||!commissionChild}>Salvar percentual</button>
-      </form>
-      <h4>Comissões recebidas</h4>{myCommissions.length?<div className="table-wrap"><table><thead><tr><th>Venda</th><th>Créditos</th><th>Percentual</th></tr></thead><tbody>
-        {myCommissions.map(c=><tr key={c.id}><td>{String(c.saleId).slice(0,8)}…</td><td>{c.credits}</td><td>{(c.basisPoints/100).toFixed(2)}%</td></tr>)}
-      </tbody></table></div>:<p className="muted">Nenhuma comissão liquidada ainda.</p>}
-    </div>}
-    {(master || network.parent) && <div className="card"><h3>Vender e comprar licenças</h3>
-      <p className="muted">Licenças são o produto. Pix ou créditos são meios de pagamento. Configure ofertas, consulte vendas e entregue licenças no mesmo lugar.</p>
-      <button type="button" className="btn primary" onClick={()=>go?.('vender-licencas')}>{master?'Abrir vendas de licenças':'Comprar licenças do Master'}</button>
-    </div>}
-    {master&&<>
-      {summary&&<div className="card"><h3>Minha rede completa</h3><div className="row" style={{gap:18,flexWrap:"wrap"}}><span><b>{summary.resellers}</b> revendas na rede</span><span><b>{summary.submasters}</b> Submasters</span><span><b>{summary.activeActivations}</b> ativações</span><span><b>{summary.stockUnits}</b> licenças em estoque na rede</span></div>
-       <details style={{marginTop:12}}><summary>Visualizar a hierarquia completa</summary><ul>{tree.map(t=><li key={t.id} style={{paddingLeft:Math.min(t.depth,10)*16}}>{t.distributionRole==="master"?"★ ":"• "}{t.name} — {t.status}</li>)}</ul>
-         {treeTotal>100&&<div className="row" style={{gap:8}}><button className="btn sm" disabled={treePage<=1} onClick={()=>setTreePage(p=>p-1)}>Anterior</button><span>{treePage} / {Math.ceil(treeTotal/100)}</span><button className="btn sm" disabled={treePage*100>=treeTotal} onClick={()=>setTreePage(p=>p+1)}>Próxima</button></div>}
-       </details>
-      </div>}
-      {master&&!network.policy.canInvite&&<div className="card"><h3>Convites não habilitados</h3><p className="muted">Sua conta é Master, mas o Superadmin ainda não ativou a permissão de convidar revendas. Peça para habilitar “Criar convites e aprovar revendas” em Rede de distribuição.</p></div>}
-      {network.policy.canInvite&&<div className="card"><h3>Convidar revendedor</h3>
-        <p className="muted">1. Gere seu convite. 2. Compartilhe pelo WhatsApp. 3. A pessoa faz o cadastro e entra automaticamente na sua rede com recursos básicos. Não precisa aprovar manualmente.</p>
-        <div className="row" style={{gap:12,alignItems:"end",flexWrap:"wrap"}}>
-          <label>Quantos cadastros (opcional)<input type="number" min="1" placeholder="Sem limite" value={inviteUses} onChange={e=>setInviteUses(e.target.value)}/></label>
-          <label>Validade em dias (opcional)<input type="number" min="1" placeholder="Sem vencimento" value={inviteDays} onChange={e=>setInviteDays(e.target.value)}/></label>
-          <button className="btn primary" disabled={busy||!network.policy.canInvite} onClick={invite}>Gerar link de convite</button>
+  const updateCommission = async event => {
+    event.preventDefault();
+    if (!commissionChild || !Number.isFinite(Number(commissionRate)) || Number(commissionRate) < 0 || Number(commissionRate) > 100) return;
+    await execute(() => api(`/partner/commerce/commissions/children/${commissionChild}`, {
+      method: "PUT", body: { basisPoints: Math.round(Number(commissionRate) * 100) },
+    }), "Percentual de comissão atualizado.");
+  };
+
+  const title = current.label;
+  const description = current.description;
+  return <div className="network-dashboard">
+    {menuOpen && <button className="network-backdrop" type="button" aria-label="Fechar menu da rede" onClick={() => setMenuOpen(false)} />}
+    <aside ref={sidebarRef} className={`network-sidebar ${menuOpen ? "network-sidebar-open" : ""}`} aria-label="Navegação da rede" aria-hidden={compact && !menuOpen ? "true" : undefined} inert={compact && !menuOpen ? "" : undefined}>
+      <div className="network-sidebar-brand"><span className="network-logo"><Mark size={34}/></span>
+        <div><strong>Delta<span>TV</span></strong><small>GESTÃO DA REDE</small></div>
+      </div>
+      <button type="button" className="network-back-button" onClick={() => go("inicio")}>← <span>Voltar ao painel principal</span></button>
+      <div className="network-sidebar-group">PAINEL DA REDE</div>
+      <nav className="network-sidebar-nav" aria-label="Seções da rede de revendas">
+        {sections.map(item => <button key={item.id} type="button" className={`network-nav-item ${active === item.id ? "network-nav-active" : ""}`}
+          aria-current={active === item.id ? "page" : undefined} onClick={() => changeSection(item.id)}>
+          <Icon name={item.icon} size={19}/><span>{item.label}</span>{active === item.id && <span className="network-nav-indicator"/>}
+        </button>)}
+      </nav>
+      <div className="network-sidebar-footer"><span className="network-account-dot"/>
+        <div><strong>{network?.account?.name || user?.name || "Minha rede"}</strong><small>{master ? "Conta Master" : network?.parent ? "Revenda vinculada" : "Revenda independente"}</small></div>
+      </div>
+    </aside>
+    <div className="network-main">
+      <header className="network-topbar">
+        <div className="network-topbar-start">
+          <button ref={openMenuRef} type="button" className="network-mobile-menu" aria-label="Abrir menu da rede" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)}><Icon name="menu" size={21}/></button>
+          <div className="network-breadcrumb"><button type="button" onClick={() => go("inicio")}>Painel principal</button><span>/</span><button type="button" onClick={() => changeSection("resumo")}>Minha rede</button><span>/</span><strong>{title}</strong></div>
         </div>
-        {newLink&&<div style={{marginTop:12,display:"grid",gap:8}}>
-          <label>Seu link de convite<input readOnly aria-label="Link para convidar revendas" value={newLink} onFocus={e=>e.target.select()} style={{width:"100%"}}/></label>
-          <div className="row" style={{gap:8,flexWrap:"wrap"}}><button className="btn primary" onClick={copyInvite}>Copiar link</button>
-          <a className="btn" href={waInvite(newLink,network.account.name)} target="_blank" rel="noopener noreferrer">Enviar pelo WhatsApp</a></div>
-        </div>}
-        <p className="muted" style={{marginTop:10}}>Por segurança, o link completo só aparece na criação. Para convidar outra pessoa depois, gere um novo link.</p>
-        {invites.length>0&&<details style={{marginTop:12}}><summary>Convites recentes ({invites.length})</summary><ul>{invites.map(i=><li key={i.id}>{inviteDescription(i)} {i.revokedAt?"— revogado":<button className="btn sm" disabled={busy} onClick={()=>run(()=>api(`/partner/network/invites/${i.id}/revoke`,{method:"POST"}),"Convite revogado.")}>Revogar</button>}</li>)}</ul></details>}
-      </div>}
-      {network.policy.canInvite&&<div className="card"><h3>Revendas da minha rede</h3>
-        {network.children.length?<div className="table-wrap"><table><thead><tr><th>Nome</th><th>Situação</th><th>Equipe</th><th>Ações</th></tr></thead><tbody>{network.children.map(c=><tr key={c.id}><td>{c.name}<div className="muted">{c.contact_email}</div></td><td>{c.status}</td><td>{c.distribution_role==="master"?"Submaster":"Revenda"} · {c.children_count} abaixo</td><td><button className="btn sm" onClick={()=>setChildId(c.id)}>Recursos</button>{c.distribution_role!=="master"&&network.policy.canPromote&&<button className="btn sm" disabled={busy||c.status!=="active"} onClick={()=>promoteChild(c.id)}>Promover a Submaster</button>}{c.status==="suspended"&&c.status_reason==="Aguardando aprovação do cadastro"&&<button className="btn sm" disabled={busy} onClick={()=>window.confirm("Recusar o cadastro e liberar a vaga desta revenda? A conta não será apagada.")&&updateChild(c.id,"reject")}>Recusar</button>}{c.status==="suspended"?<button className="btn sm" disabled={busy} onClick={()=>updateChild(c.id,"approve")}>Aprovar</button>:<button className="btn sm" disabled={busy} onClick={()=>updateChild(c.id,"suspend")}>Suspender</button>}</td></tr>)}</tbody></table></div>:<p className="muted">Nenhuma revenda vinculada. Compartilhe seu convite.</p>}
-        {(network.childrenTotal||0)>network.childrenPageSize&&<div className="row" style={{gap:8,marginTop:10}}>
-          <button className="btn sm" disabled={childPage<=1} onClick={()=>setChildPage(p=>p-1)}>Anterior</button>
-          <span>Página {childPage} de {Math.ceil(network.childrenTotal/network.childrenPageSize)}</span>
-          <button className="btn sm" disabled={childPage*network.childrenPageSize>=network.childrenTotal} onClick={()=>setChildPage(p=>p+1)}>Próxima</button>
-        </div>}
-      </div>}
-      {network.policy.canInvite&&childResources&&<div className="card"><h3>Recursos da revenda selecionada</h3><p className="muted">Você só pode conceder recursos disponíveis na sua própria conta.</p>{Object.entries(resourceLabels).map(([key,label])=><div key={key} className="row" style={{alignItems:"center",justifyContent:"space-between",marginBottom:8}}><span>{label}</span><label><input type="checkbox" checked={childResources.direct[key]?.enabled!==false} disabled={busy||resources?.effective[key]?.enabled===false} onChange={e=>updateResource(key,e.target.checked,childResources.direct[key]?.limit??null)}/> Habilitado</label></div>)}<button className="btn sm" onClick={()=>{setChildId(null);setChildResources(null);}}>Fechar</button></div>}
-    </>}
-  </section>;
+        <div className="network-topbar-actions">
+          <button className="network-refresh" type="button" disabled={busy || loading} onClick={() => { setError(""); reload().catch(err => setError(err.message)); }}>Atualizar dados</button>
+          <button className="network-topbar-exit" type="button" onClick={() => go("inicio")}>Sair da rede <span aria-hidden="true">↗</span></button>
+        </div>
+      </header>
+      <main className="network-content" id="network-main" tabIndex={-1}>
+        <div className="network-page-heading"><span className="network-eyebrow">DELTA TV / REDE COMERCIAL</span><h1>{title}</h1><p>{description}</p></div>
+        {error && <div className="network-alert network-alert-error" role="alert"><span>{error}</span><button type="button" onClick={() => { setError(""); reload().catch(err => setError(err.message)); }}>Tentar novamente</button></div>}
+        {notice && <div className="network-alert network-alert-success" role="status">{notice}</div>}
+        {loading && !network ? <div className="network-loading" role="status">Carregando informações da rede…</div> : null}
+        {network && <>
+          {active === "resumo" && <div className="network-section-body">
+            <section className="network-hero">
+              <div className="network-hero-copy"><span className="network-hero-tag">SUA OPERAÇÃO COMERCIAL</span><h2>{master ? "Sua rede, em um só lugar." : "Acompanhe sua participação na rede."}</h2>
+                <p>{master ? "Organize as revendas, acompanhe a hierarquia e gerencie convites, comissões e licenças em áreas separadas." : network.parent ? `Você participa da rede de ${network.parent.name}. Consulte seu contrato e compre licenças sem procurar em outras telas.` : "Sua conta não pertence a uma rede Master. O Superadmin pode habilitar esse recurso."}</p>
+                <div className="network-hero-actions">{canInvite && <button className="btn primary" onClick={() => changeSection("convites")}><Icon name="plus" size={17}/> Convidar revenda</button>}
+                  {sections.some(item => item.id === "licencas") && <button className="btn" onClick={() => changeSection("licencas")}>Abrir licenças <Icon name="arrow-right" size={15}/></button>}</div></div>
+              <div className="network-hero-emblem" aria-hidden="true"><Icon name="users" size={56}/></div>
+            </section>
+            <section className="network-stats" aria-label="Indicadores da rede">
+              <Stat icon="users" label="Revendas diretas" value={formatAmount(network.childrenTotal ?? directChildren.length)} detail="Sob sua gestão"/>
+              <Stat icon="ticket" label="Licenças em estoque" value={formatAmount(stockTotal)} detail="Disponíveis nesta conta"/>
+              <Stat icon="coin" label="Créditos comerciais" value={formatAmount(network.creditBalance)} detail="Saldo em unidades de crédito"/>
+              <Stat icon="tv" label="Ativações na rede" value={summary ? formatAmount(summary.activeActivations) : "—"} detail={summary ? "Na hierarquia" : "Dado indisponível"}/>
+            </section>
+            <section className="network-main-cards"><div className="network-panel">
+              <SectionHeading eyebrow="PRÓXIMOS PASSOS" title="O que você quer fazer?" description="Escolha uma tarefa. Cada assunto tem uma área própria."/>
+              <div className="network-shortcuts">{sections.filter(item => !["resumo", "assinatura"].includes(item.id)).slice(0, 6).map(item =>
+                <button type="button" className="network-shortcut" key={item.id} onClick={() => changeSection(item.id)}><span className="network-shortcut-icon"><Icon name={item.icon} size={20}/></span><span><strong>{item.label}</strong><small>{item.description}</small></span><Icon name="arrow-right" size={17}/></button>)}</div>
+            </div><div className="network-panel network-subscription-card">
+              <SectionHeading eyebrow="SEU ACESSO" title="Assinatura DeltaTV" description="Condições comerciais da sua conta."/>
+              {contract ? <><span className="network-label">PLANO CONTRATADO</span><strong className="network-plan-name">{contract.planName}</strong><p>Modelo: {contract.billingMode} · Situação: {contract.state}</p><p>Ativações incluídas: {contract.includedSlots ?? "Sem limite comercial"}</p></> : <p>Nenhum contrato comercial DeltaTV 3.0 cadastrado. Seu plano anterior permanece válido.</p>}
+              <button type="button" className="network-text-link" onClick={() => changeSection("assinatura")}>Ver detalhes da assinatura <Icon name="arrow-right" size={16}/></button>
+            </div></section>
+          </div>}
+
+          {active === "revendas" && <section className="network-section-body">
+            <SectionHeading eyebrow="GESTÃO DE PESSOAS" title="Revendas vinculadas" description="Localize, aprove, suspenda ou configure os integrantes diretamente vinculados à sua conta."
+              action={canInvite ? <button className="btn primary" onClick={() => changeSection("convites")}>+ Novo convite</button> : null}/>
+            <div className="network-panel"><div className="network-table-toolbar"><label className="network-search-label">Buscar revenda<input type="search" value={childQuery} onChange={event => setChildQuery(event.target.value)} placeholder="Nome ou e-mail"/></label><span>{formatAmount(network.childrenTotal ?? directChildren.length)} revendas no total</span></div>
+              {filteredChildren.length ? <div className="network-table-scroll"><table className="network-table"><thead><tr><th>Revenda</th><th>Situação</th><th>Tipo</th><th>Equipe</th><th>Ações</th></tr></thead><tbody>
+                {filteredChildren.map(child => <tr key={child.id}><td data-label="Revenda"><strong>{child.name}</strong><small>{child.contact_email}</small></td><td data-label="Situação"><span className={`network-status ${child.status === "active" ? "is-active" : "is-inactive"}`}>{child.status === "active" ? "Ativo" : child.status === "suspended" ? "Suspenso" : child.status}</span></td>
+                  <td data-label="Tipo">{child.distribution_role === "master" ? "Submaster" : "Revenda"}</td><td data-label="Equipe">{formatAmount(child.children_count || 0)}</td>
+                  <td data-label="Ações"><div className="network-row-actions">{canInvite && <button type="button" className="btn sm" onClick={() => { setChildId(child.id); changeSection("permissoes"); }}>Recursos</button>}
+                    {canInvite && child.distribution_role !== "master" && network.policy?.canPromote && <button type="button" className="btn sm" disabled={busy || child.status !== "active"} onClick={() => promote(child)}>Promover</button>}
+                    {canInvite && child.status === "suspended" && child.status_reason === "Aguardando aprovação do cadastro" && <button type="button" className="btn sm" disabled={busy} onClick={() => window.confirm(`Recusar o cadastro de ${child.name}? A conta será preservada.`) && changeChild(child.id, "reject")}>Recusar</button>}
+                    {canInvite && (child.status === "suspended" ? <button type="button" className="btn sm" disabled={busy} onClick={() => changeChild(child.id, "approve")}>Aprovar</button> : <button type="button" className="btn sm" disabled={busy} onClick={() => window.confirm(`Suspender ${child.name}?`) && changeChild(child.id, "suspend")}>Suspender</button>)}</div></td></tr>)}
+              </tbody></table></div> : <EmptyState title="Nenhuma revenda encontrada" description={directChildren.length ? "Tente pesquisar por outro nome ou e-mail." : "Crie um convite para começar sua rede."} action={canInvite ? <button className="btn primary" onClick={() => changeSection("convites")}>Criar convite</button> : null}/>}
+              {(network.childrenTotal || 0) > (network.childrenPageSize || 50) && <div className="network-pagination"><button className="btn sm" disabled={childPage <= 1} onClick={() => setChildPage(p => p - 1)}>Anterior</button><span>Página {childPage} de {Math.ceil(network.childrenTotal / (network.childrenPageSize || 50))}</span><button className="btn sm" disabled={childPage * (network.childrenPageSize || 50) >= network.childrenTotal} onClick={() => setChildPage(p => p + 1)}>Próxima</button></div>}
+            </div>
+          </section>}
+
+          {active === "convites" && <section className="network-section-body">
+            <SectionHeading eyebrow="CRESCIMENTO DA REDE" title="Convidar revendas" description="Envie um link para que a pessoa faça o próprio cadastro e seja vinculada à sua rede."/>
+            <div className="network-grid-two"><div className="network-panel"><h3>Gerar convite</h3><p className="network-description">Campos vazios significam sem limite comercial ou sem vencimento.</p>
+              <form className="network-form" onSubmit={createInvite}><label>Número máximo de cadastros (opcional)<input type="number" min="1" value={inviteUses} onChange={event => setInviteUses(event.target.value)} placeholder="Sem limite"/></label><label>Validade em dias (opcional)<input type="number" min="1" value={inviteDays} onChange={event => setInviteDays(event.target.value)} placeholder="Sem vencimento"/></label><button className="btn primary" type="submit" disabled={busy}>Gerar link de convite</button></form>
+              {newLink && <div className="network-invite-result"><strong>Convite criado!</strong><label>Link para compartilhar<input readOnly value={newLink} onFocus={event => event.target.select()}/></label><div className="network-inline-actions"><button className="btn primary" type="button" onClick={copyLink}>Copiar link</button><a className="btn" href={waInvite(newLink, network.account?.name)} target="_blank" rel="noopener noreferrer">Enviar por WhatsApp</a></div><small>Por segurança, o link completo só aparece durante a criação.</small></div>}
+            </div><div className="network-panel"><h3>Como funciona?</h3><ol className="network-steps"><li><strong>Crie o convite.</strong><span>Defina as restrições apenas se desejar.</span></li><li><strong>Compartilhe o link.</strong><span>Envie pelo WhatsApp ou outro canal seguro.</span></li><li><strong>Revenda cadastrada.</strong><span>A conta aparece na sua rede, seguindo as regras de autorização.</span></li></ol></div></div>
+            <div className="network-panel"><h3>Convites recentes</h3>{invites.length ? <div className="network-invite-list">{invites.map(invite => <div key={invite.id} className="network-invite-row"><div><strong>{invite.revokedAt ? "Revogado" : "Ativo"}</strong><small>{describeInvite(invite)}</small></div>{!invite.revokedAt && <button type="button" className="btn sm" disabled={busy} onClick={() => window.confirm("Revogar este convite? Ele deixará de aceitar novos cadastros.") && execute(() => api(`/partner/network/invites/${invite.id}/revoke`, { method: "POST" }), "Convite revogado.")}>Revogar</button>}</div>)}</div> : <EmptyState icon="plus" title="Nenhum convite recente" description="Os convites criados aparecerão aqui."/>}</div>
+          </section>}
+
+          {active === "hierarquia" && <section className="network-section-body">
+            <SectionHeading eyebrow="ESTRUTURA COMERCIAL" title="Hierarquia da rede" description="Veja Masters, Submasters e revendas por nível de relacionamento."/>
+            <section className="network-stats"><Stat icon="users" label="Revendas totais" value={summary ? formatAmount(summary.resellers) : "—"}/><Stat icon="shield" label="Submasters" value={summary ? formatAmount(summary.submasters) : "—"}/><Stat icon="tv" label="Ativações na rede" value={summary ? formatAmount(summary.activeActivations) : "—"}/><Stat icon="box" label="Estoque na rede" value={summary ? formatAmount(summary.stockUnits) : "—"}/></section>
+            <div className="network-panel"><h3>Árvore da rede</h3><p className="network-description">Participantes abaixo da sua conta. O recuo representa a profundidade.</p>
+              {tree.length ? <ul className="network-tree">{tree.map(entry => <li key={entry.id} style={{"--network-depth":Math.min(Number(entry.depth) || 0, 7)}}><span className="network-tree-icon"><Icon name={entry.distributionRole === "master" ? "shield" : "users"} size={17}/></span><span><strong>{entry.name}</strong><small>{entry.distributionRole === "master" ? "Submaster" : "Revenda"}</small></span><span className={`network-status ${entry.status === "active" ? "is-active" : "is-inactive"}`}>{entry.status}</span></li>)}</ul> : <EmptyState title="Nenhum participante encontrado" description="A hierarquia será exibida quando houver revendas na sua rede."/>}
+              {treeTotal > 100 && <div className="network-pagination"><button className="btn sm" disabled={treePage <= 1} onClick={() => setTreePage(p => p - 1)}>Anterior</button><span>Página {treePage} de {Math.ceil(treeTotal / 100)}</span><button className="btn sm" disabled={treePage * 100 >= treeTotal} onClick={() => setTreePage(p => p + 1)}>Próxima</button></div>}
+            </div>
+          </section>}
+
+          {active === "permissoes" && <section className="network-section-body">
+            <SectionHeading eyebrow="CONTROLE DE ACESSO" title="Recursos das revendas" description="Defina quais módulos as revendas diretas podem utilizar, sem ultrapassar os direitos da sua própria conta."/>
+            <div className="network-panel"><label className="network-select-label">Selecione a revenda<select value={childId} onChange={event => setChildId(event.target.value)}><option value="">Escolha uma revenda</option>{directChildren.map(child => <option key={child.id} value={child.id}>{child.name}</option>)}</select></label>
+              {!childId ? <EmptyState icon="shield" title="Escolha uma revenda" description="Selecione uma conta para consultar e modificar seus recursos."/> : !childResources ? <div role="status" className="network-loading">Carregando permissões…</div> : <div className="network-resources"><div className="network-resource-title"><h3>{selectedChild?.name || "Revenda selecionada"}</h3><p>As opções indisponíveis são controladas pelo seu contrato ou pelo Superadmin.</p></div>
+                {Object.entries(RESOURCE_LABELS).map(([key, label]) => <label className="network-resource" key={key}><span>{label}</span><span className="network-switch"><input type="checkbox" disabled={busy || resources?.effective?.[key]?.enabled === false} checked={childResources.direct?.[key]?.enabled !== false} onChange={event => updateResource(key, event.target.checked, childResources.direct?.[key]?.limit ?? null)}/><span>Habilitado</span></span></label>)}</div>}
+            </div>
+          </section>}
+
+          {active === "comissoes" && <section className="network-section-body">
+            <SectionHeading eyebrow="RESULTADOS DA REDE" title="Comissões" description="Configure percentuais autorizados e consulte os créditos recebidos por vendas confirmadas."/>
+            <div className="network-grid-two"><div className="network-panel"><h3>Configurar percentual</h3><p className="network-description">O Superadmin determina o teto máximo e o financiamento da comissão.</p>
+              <form className="network-form" onSubmit={updateCommission}><label>Revenda direta<select required value={commissionChild} onChange={event => setCommissionChild(event.target.value)}><option value="">Selecione a revenda</option>{directChildren.map(child => <option key={child.id} value={child.id}>{child.name}</option>)}</select></label><label>Comissão (%)<input required type="number" min="0" max="100" step="0.01" value={commissionRate} onChange={event => setCommissionRate(event.target.value)}/></label><button className="btn primary" type="submit" disabled={busy || !commissionChild}>Salvar comissão</button></form>
+            </div><div className="network-panel"><h3>Resumo de comissões</h3><div className="network-big-number">{formatAmount(myCommissions.reduce((sum, item) => sum + Number(item.credits || 0), 0))}</div><p>Créditos listados como comissões recebidas.</p><small>A geração depende de vendas elegíveis e políticas previamente configuradas.</small></div></div>
+            <div className="network-panel"><h3>Histórico de comissões</h3>{myCommissions.length ? <div className="network-table-scroll"><table className="network-table"><thead><tr><th>Venda</th><th>Créditos</th><th>Percentual</th></tr></thead><tbody>{myCommissions.map(item => <tr key={item.id}><td data-label="Venda">{String(item.saleId).slice(0, 12)}…</td><td data-label="Créditos">{formatAmount(item.credits)}</td><td data-label="Percentual">{(Number(item.basisPoints || 0) / 100).toFixed(2)}%</td></tr>)}</tbody></table></div> : <EmptyState icon="coin" title="Nenhuma comissão recebida" description="As comissões confirmadas aparecerão aqui quando houver vendas elegíveis."/>}</div>
+          </section>}
+
+          {active === "licencas" && <section className="network-section-body">
+            <SectionHeading eyebrow="OPERAÇÕES COMERCIAIS" title="Licenças da rede" description="Uma única central para vender, comprar por Pix ou créditos e registrar entregas autorizadas."/>
+            <LicenseTrading go={go}/>
+            {/* A mesma implementação pode ser aberta também pela área principal de Licenças. */}
+            <button type="button" className="network-text-link" onClick={() => go?.('vender-licencas')}>Abrir a central de licenças no painel principal <Icon name="arrow-right" size={16}/></button>
+          </section>}
+
+          {active === "assinatura" && <section className="network-section-body">
+            <SectionHeading eyebrow="SUA CONTA COMERCIAL" title="Assinatura de acesso" description="Consulte seu contrato comercial DeltaTV e os recursos vinculados à sua conta."/>
+            <div className="network-grid-two"><div className="network-panel"><h3>Contrato atual</h3>{contract ? <dl className="network-details"><div><dt>Plano</dt><dd>{contract.planName}</dd></div><div><dt>Modalidade</dt><dd>{contract.billingMode}</dd></div><div><dt>Situação</dt><dd>{contract.state}</dd></div><div><dt>Ativações incluídas</dt><dd>{contract.includedSlots ?? "Sem limite comercial"}</dd></div></dl> : <EmptyState icon="wallet" title="Contrato DeltaTV 3.0 não encontrado" description="Sua configuração comercial anterior continua válida."/>}</div>
+              <div className="network-panel"><h3>Regras de operação</h3><p>As condições comerciais são definidas pelo Superadmin e pelo contrato em vigor. Este painel mostra informações da assinatura, mas não modifica automaticamente suas licenças existentes.</p>
+                <p>Se você precisa consultar cobranças ou pagamentos, utilize a central Financeira do painel principal.</p><button type="button" className="btn" onClick={() => go("financeiro")}>Abrir Financeiro</button></div></div>
+            {master && !network.account?.parentPartnerId && <div className="network-panel"><h3>Emissão própria de licenças</h3><p>Se autorizada pelo Superadmin, a emissão fica em Licenças → Estoque. Essa permissão não é concedida a Submasters.</p><button type="button" className="btn" onClick={() => go("estoque")}>Consultar estoque e emissão</button></div>}
+          </section>}
+        </>}
+      </main>
+    </div>
+  </div>;
 }

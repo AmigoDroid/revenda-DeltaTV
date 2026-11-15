@@ -153,9 +153,12 @@ function Layout({ user }) {
   const cur = items.find((n) => n.id === route) || items[0];
   const go = useCallback((id) => { location.hash = `/${id}`; setOpen(false); window.scrollTo(0, 0); }, []);
   const Page = cur.page;
-  const centerAllowed = id => items.some(item => item.id === id);
+  const centerAllowed = id => items.some(item => item.id === id || (id.startsWith("rede/") && item.id === "rede"));
   const title = cur.id === "inicio" ? `Olá, ${(user.name || "").split(" ")[0] || "revendedor"}` : cur.label;
   const badge = { clientes: summary?.overdue, notificacoes: notificationCount };
+  // A rede comercial possui sua própria navegação e ocupa a tela inteira.
+  const networkRoute = !blocked && isReseller && (route === "rede" || route.startsWith("rede/"));
+  if (networkRoute) return <Network go={go} user={user} section={route.startsWith("rede/") ? route.slice(5).split("/")[0] : "resumo"} />;
 
   return (
     <div className="layout">
