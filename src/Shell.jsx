@@ -11,6 +11,7 @@ import { useSimpleMode } from "@deltatv/ui/useSimpleMode";
 import { EasyPageGuide } from "@deltatv/ui/EasyStart";
 import WhiteLabelApps from "./WhiteLabelApps.jsx";
 import Clients from "./pages/Customers3.jsx";
+import LicenseActivation from "./pages/LicenseActivation.jsx";
 import SupportCenter from "./SupportCenter.jsx";
 import Devices from "./pages/Devices.jsx";
 import { StockPortal } from "./pages/Stock.jsx";
@@ -38,6 +39,7 @@ const NAV = [
   ...Object.entries(CENTER_CONFIG).map(([id,c])=>({id:`central-${id}`,label:c.title,icon:({pagamentos:"wallet",dispositivos:"tv",licenciamento:"ticket",ativacao:"key",conta:"user"})[id],page:OperationCenter,desc:c.intro,center:true})),
   { id: "inicio", label: "Início", icon: "home", page: Home, desc: "O que precisa da sua atenção hoje." },
   { id: "suporte", label: "Resolver problema da TV", icon: "help", page: SupportCenter, desc: "Diagnostique um cliente sem interpretar logs ou códigos técnicos." },
+  { id: "ativar-tv", label: "Ativar TV", icon: "key", page: LicenseActivation, reseller: true, desc: "Ative a TV informando o MAC e aplicando uma licença. Emissão direta só para Master autorizado." },
   { id: "clientes", label: "Clientes", icon: "users", page: Clients, reseller: true, desc: "Cadastre pessoas sem MAC, gerencie planos com várias TVs e consulte os cadastros antigos na mesma área." },
   { id: "dispositivos", label: "Dispositivos", icon: "tv", page: Devices, desc: "Busque uma TV pelo MAC, edite as listas dela e gerencie as ativações." },
   { id: "vender-licencas", label: "Vender / comprar licenças", icon: "ticket", page: LicenseTrading, reseller: true, desc: "O Master vende licenças por Pix ou créditos e pode entregar diretamente à sua rede." },
@@ -59,10 +61,10 @@ const NAV = [
   { id: "ajuda", label: "Central de Ajuda", icon: "help", page: null, desc: "Guias e tutoriais interativos do painel." },
 ];
 // Menu por área: o dia a dia (clientes e TVs), o que vende (licenças), a ativação (códigos e servidores) e a conta.
-const SIMPLE_RESELLER = new Set(["central-ativacao", "inicio", "suporte", "clientes", "dispositivos", "estoque", "vender-licencas", "rede", "codigos", "servidores", "notificacoes", "ajuda", "conta"]);
+const SIMPLE_RESELLER = new Set(["central-ativacao", "inicio", "suporte", "ativar-tv", "clientes", "dispositivos", "estoque", "vender-licencas", "rede", "codigos", "servidores", "notificacoes", "ajuda", "conta"]);
 const GROUPS = [
   { label: null, ids: ["inicio"] },
-  { label: "Acesso rápido", ids: ["clientes", "dispositivos", "rede", "central-ativacao"] },
+  { label: "Acesso rápido", ids: ["ativar-tv", "clientes", "dispositivos", "rede"] },
   { label: "Atendimento", ids: ["suporte", "tvmessages"] },
   { label: "Licenças e financeiro", ids: ["vender-licencas", "estoque", "creditos", "licencas", "financeiro"] },
   { label: "Aplicativos e servidores", ids: ["codigos", "playerweb", "servidores", "monitoramento", "white-label", "aplicativos"] },
@@ -194,7 +196,7 @@ function Layout({ user }) {
           <button type="button" className="icon menu-btn" aria-label="Abrir menu" aria-expanded={open} onClick={() => setOpen(true)}><Icon name="menu" size={22} /></button>
           <div className="topbar-context"><span className="topbar-eyebrow">PAINEL DA REVENDA</span><strong className="topbar-title">{cur.label}</strong></div>
           <div className="topbar-tools">
-            {!blocked && <button className="btn primary sm" type="button" onClick={()=>{sessionStorage.setItem("deltatv-quick-activate","1");go("clientes");window.dispatchEvent(new Event("deltatv-open-activation"));}}>Ativar TV</button>}
+            {!blocked && <button className="btn primary sm" type="button" onClick={()=>{go("ativar-tv");}}>Ativar TV</button>}
             
             <button type="button" className="btn sm" data-help-target="context-help" onClick={() => window.dispatchEvent(new CustomEvent("deltatv-help-context", { detail: { screen: cur.id } }))}>? Ajuda</button>
             {!blocked && <button type="button" className="topbar-notify" aria-label={notificationCount > 0 ? `${notificationCount} notificações não lidas` : "Abrir notificações"} title="Notificações" onClick={() => go("notificacoes")}>

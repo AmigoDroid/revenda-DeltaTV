@@ -9,7 +9,7 @@ import { Badge, Empty, OnlineBadge, PlatformBadge, accessStatus, Pager, Table, f
 
 const REFRESH_MS = 20000;
 
-export default function Devices() {
+export default function Devices({ go }) {
   const { isReseller } = usePortal();
   const [webFor, setWebFor] = useState(null); // dispositivo para o qual se gera um acesso do Player Web
   const { confirm } = useUi();
@@ -35,7 +35,10 @@ export default function Devices() {
   };
   return (
     <>
-      {isReseller && <MacDevice />}
+      {isReseller && <MacDevice onActivate={mac=>{
+        sessionStorage.setItem('deltatv-activation-mac', mac);
+        go('ativar-tv');
+      }}/>}
       <section>
         <div className="section-head">
           <h3>{isReseller ? "Ativações" : "Meus dispositivos"}</h3>

@@ -83,6 +83,7 @@ export default function Home({ go }) {
         <div className="home-hero-text"><span className="home-hero-eyebrow"><Icon name="shield" size={14} /> CENTRAL DE OPERAÇÕES</span>
           <h2>Resumo da sua operação</h2>
           <p>Confira o que está acontecendo com suas TVs e seus clientes.</p>
+          {isReseller && <button className="btn primary" type="button" data-license-activation-entry="true" onClick={()=>go("ativar-tv")}>Ativar TV com licença</button>}
         </div>
         <div className="home-hero-actions"><button type="button" className="btn primary" onClick={() => go("dispositivos")}><Icon name="tv" size={16}/> Ver dispositivos</button><button type="button" className="btn" onClick={() => go("codigos")}><Icon name="key" size={16}/> Meus códigos</button></div>
       </div>

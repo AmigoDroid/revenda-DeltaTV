@@ -4,7 +4,7 @@ export const TASKS = [
   {"label": "Cadastrar cliente", "actionId":"client.create", "route": "clientes", "description": "Dados, contato e vencimento do cliente", "keywords": ["novo", "cliente", "usuario", "cadastro"]},
   {"label": "Encontrar TV pelo MAC", "route": "dispositivos", "description": "Consultar ativações e listas do dispositivo", "keywords": ["tv", "aparelho", "localizar", "mac"]},
   {"label": "Diagnosticar TV offline", "route": "suporte", "description": "Resolver problemas de conexão e reprodução", "keywords": ["suporte", "falha", "erro", "diagnostico"]},
-  {"label": "Ativar uma TV", "route": "dispositivos", "description": "Vincular e gerenciar um dispositivo", "keywords": ["aparelho", "ativacao", "nova", "mac"]},
+  {"label": "Ativar uma TV com licença", "route": "ativar-tv", "description": "Digite o MAC e aplique uma licença no dispositivo", "keywords": ["aparelho", "ativacao", "nova", "mac"]},
   {"label": "Gerar código para TV", "route": "codigos", "description": "Criar e consultar códigos de ativação", "keywords": ["ativar", "codigo", "senha"]},
   {"label": "Instalar aplicativo na TV", "route": "aplicativos", "description": "Links de instalação e Downloader", "keywords": ["roku", "android", "samsung", "lg", "download"]},
   {"label": "Configurar Player Web", "route": "playerweb", "description": "Acesso pelo navegador", "keywords": ["webroku", "web", "roku", "navegador"]},

@@ -3,7 +3,6 @@ import { api } from "../api.js";
 import { Badge, OnlineBadge, PlatformBadge, Table, fmtDateTime, useAction, useUi } from "../ui.jsx";
 import ConfigureForm from "./ConfigureForm.jsx";
 import DeviceLists, { livesOf, removeMessage, saveMessage } from "./DeviceLists.jsx";
-import { ApplyStock } from "./Stock.jsx";
 
 const ACTION = {
   "device.configuration.confirm": "Lista adicionada/atualizada",
@@ -21,7 +20,7 @@ const who = (e) => (e.actorName ? `${e.actorName}${e.actorPartnerName ? ` (${e.a
  * Edição de um dispositivo POR MAC (revendedores). O backend decide quem pode (token + cadastro ativo) e registra,
  * em auditoria, a pessoa e o revendedor de cada alteração. Este componente só apresenta.
  */
-export default function MacDevice() {
+export default function MacDevice({ onActivate }) {
   const { confirm } = useUi();
   const run = useAction();
   const [macInput, setMacInput] = useState("");
@@ -87,7 +86,7 @@ export default function MacDevice() {
           </p>
 
           <DeviceLists device={device} onRemove={remove} />
-          <ApplyStock mac={mac} onApplied={() => { reload(); setHistory(null); }} />
+          <button type="button" className="btn primary" onClick={() => onActivate?.(mac)}>Ativar ou renovar licença desta TV</button>
           <ConfigureForm key={device.deviceId} device={device} onSubmit={submit} onHistory={loadHistory} />
         </div>
       )}
