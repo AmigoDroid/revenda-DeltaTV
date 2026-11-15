@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { api } from "../api.js";
 import ContentSourcesWorkspace from "@deltatv/ui/ContentSourcesWorkspace";
+import DeletionDialog from "../DeletionDialog.jsx";
 import { Field, Modal, useAction, useUi } from "../ui.jsx";
 
 /** Frontend único para URLs de revenda; o backend continua validando origem, permissões e roteamento. */
@@ -8,10 +9,8 @@ export default function Providers({ providers = [], codes = [], onChanged, tab =
   const run = useAction();
   const { confirm } = useUi();
   const [form, setForm] = useState(null);
-  const remove = async (p) => {
-    if (!(await confirm({ title: "Excluir servidor", message: `Excluir “${p.name}”? Códigos ou dispositivos vinculados podem impedir a exclusão.`, danger: true, confirmLabel: "Excluir" }))) return;
-    if (await run(() => api(`/partner/providers/${p.id}`, { method: "DELETE" }), "Servidor excluído.")) onChanged();
-  };
+  const [deleting,setDeleting] = useState(null);
+  const remove = (p) => setDeleting(p);
   return <ContentSourcesWorkspace
     title="Fontes de conteúdo" description="Edite links, confira prioridades e consulte a qualidade HTTP dos seus servidores sem trocar de área."
     sources={providers} activeTab={tab} onTabChange={onTabChange} onCreate={()=>setForm({})}
@@ -19,6 +18,7 @@ export default function Providers({ providers = [], codes = [], onChanged, tab =
     showSummary={false} qualityContent={qualityContent} onOpenCodes={()=>{window.location.hash='#/codigos'}}
   >
     {!!codes.length && <p className="muted" style={{fontSize:12,margin:0}}>{codes.filter(c=>c.status==='active').length} código(s) ativo(s) na sua conta. A distribuição e prioridade final são definidas pelo backend.</p>}
+    {deleting&&<DeletionDialog kind="provider" item={deleting} url={`/partner/providers/${deleting.id}`} onClose={()=>setDeleting(null)} onDeleted={()=>{setDeleting(null);onChanged()}}/>}
     {form && <ProviderForm provider={form.id ? form : null} onClose={() => setForm(null)} onSaved={() => {setForm(null);onChanged();}} />}
   </ContentSourcesWorkspace>;
 }

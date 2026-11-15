@@ -1,4 +1,5 @@
 import { useState } from "react";
+import DeletionDialog from "../DeletionDialog.jsx";
 import { api } from "../api.js";
 import { usePortal } from "../portal.jsx";
 import CodeModal, { CodeEditModal, monthsLabel } from "./CodeModal.jsx";
@@ -9,6 +10,7 @@ export default function Codes() {
   const { confirm } = useUi();
   const run = useAction();
   const [newCode, setNewCode] = useState(false);
+  const [deleting,setDeleting] = useState(null);
   const [editCode, setEditCode] = useState(null);
   const revoke = async (c) => { if (await confirm({ title: "Revogar código", message: "Impede novas ativações com este código.", danger: true }) && await run(() => api(`/partner/codes/${c.id}/revoke`, { method: "POST" }), "Código revogado.")) loadCodes(); };
   return (
@@ -28,10 +30,12 @@ export default function Codes() {
               <RowMenu items={[
                 { label: "Editar", hidden: c.status !== "active", onClick: () => setEditCode(c) },
                 { label: "Revogar", hidden: c.status !== "active", danger: true, onClick: () => revoke(c) },
+                { label: "Excluir", danger:true,onClick:()=>setDeleting(c)},
               ]} />
             </td>
         </tr>))}</tbody></Table>
       {codes.length === 0 && <p className="muted">Nenhum código criado ainda.</p>}
+      {deleting&&<DeletionDialog kind="code" item={deleting} url={`/partner/codes/${deleting.id}`} onClose={()=>setDeleting(null)} onDeleted={()=>{setDeleting(null);loadCodes()}}/>}
       {newCode && <CodeModal checkPath="/partner/codes/check" createPath="/partner/codes" kind={me?.kind} providers={providers} onClose={() => setNewCode(false)} onCreated={() => { setNewCode(false); loadCodes(); }} />}
       {editCode && <CodeEditModal code={editCode} kind={me?.kind} providers={providers} onClose={() => setEditCode(null)} onSaved={() => { setEditCode(null); loadCodes(); }} />}
     </>
