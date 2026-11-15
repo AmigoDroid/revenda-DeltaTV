@@ -9,8 +9,9 @@ const money = formatBRL;
 const Message=({type='info',children})=><p role={type==='error'?'alert':'status'} className={`notice ${type==='error'?'error':''}`}>{children}</p>;
 function RequestButton({busy,children,...props}) { return <button type="submit" disabled={busy||props.disabled} className="btn primary" {...props}>{busy?'Processando…':children}</button>; }
 
-export default function Customers3({go}) {
+export default function Customers3({go, activeTab, hideTabs=false}) {
   const [tab,setTab]=useState('clientes');
+  const visibleTab = activeTab || tab;
   const [list,setList]=useState([]),[plans,setPlans]=useState([]),[selected,setSelected]=useState(null);
   const [details,setDetails]=useState(null),[q,setQ]=useState('');
   const [form,setForm]=useState({name:'',email:'',phone:''}),[plan,setPlan]=useState({name:'',price:'',slots:'2',months:'1'});
@@ -23,15 +24,15 @@ export default function Customers3({go}) {
   const showCustomer=async id=>{setSelected(id);const r=await api(`/partner/commerce/customers/${id}`);setDetails(r);};
   return <div className="delta3-hub">
     <header className="delta3-header">
-      <div className="delta3-eyebrow">ATENDIMENTO E ATIVAÇÕES</div>
-      <h2>Clientes e dispositivos</h2>
-      <p className="muted">Gerencie os dados comerciais dos clientes. A licença e a ativação de cada TV ficam na área Ativar TV.</p>
-      <nav className="delta3-tabs" aria-label="Gerenciamento de clientes">
-        {[['clientes','Clientes'],['planos','Planos'],['antigos','Cadastros por MAC (antigos)']].map(([k,v])=><button type="button" className={`btn ${tab===k?'primary':''}`} key={k} onClick={()=>setTab(k)} aria-current={tab===k?'page':undefined}>{v}</button>)}
-      </nav>
+      <div className="delta3-eyebrow">CADASTROS COMERCIAIS</div>
+      <h2>{visibleTab === 'planos' ? 'Planos dos clientes' : visibleTab === 'antigos' ? 'Cadastros anteriores por MAC' : 'Meus clientes'}</h2>
+      <p className="muted">{visibleTab === 'planos' ? 'Crie e consulte planos comerciais sem ativar licenças automaticamente.' : visibleTab === 'antigos' ? 'Consulte os registros anteriores, preservados por compatibilidade.' : 'Cadastre e consulte clientes. Para ativar uma TV, utilize o menu Licenças e ativações.'}</p>
+      {!hideTabs && <nav className="delta3-tabs" aria-label="Gerenciamento de clientes">
+        {[['clientes','Clientes'],['planos','Planos'],['antigos','Cadastros por MAC (antigos)']].map(([k,v])=><button type="button" className={`btn ${visibleTab===k?'primary':''}`} key={k} onClick={()=>setTab(k)} aria-current={visibleTab===k?'page':undefined}>{v}</button>)}
+      </nav>}
     </header>
     {error&&<Message type="error">{error}</Message>}{notice&&<Message>{notice}</Message>}
-    {tab==='clientes'&&<div className="delta3-grid">
+    {visibleTab==='clientes'&&<div className="delta3-grid">
       <section className="card delta3-section">
         <h3>Novo cliente</h3><p className="muted">Nenhum MAC é obrigatório para cadastrar.</p>
         <form onSubmit={e=>{e.preventDefault();safe(async()=>{const c=await api('/partner/commerce/customers',{method:'POST',body:{...form,email:form.email||null,phone:form.phone||null}});setForm({name:'',email:'',phone:''});await refresh();await showCustomer(c.id);setNotice('Cliente cadastrado. Escolha um plano ou associe uma TV.');});}}>
@@ -71,7 +72,7 @@ export default function Customers3({go}) {
         </div>)}</div>
       </section>}
     </div>}
-    {tab==='planos'&&<section className="card delta3-section">
+    {visibleTab==='planos'&&<section className="card delta3-section">
       <h3>Planos para seus clientes</h3><p className="muted">Crie planos de até quantas TVs quiser. Vagas ilimitadas podem ser configuradas posteriormente pela administração.</p>
       <form onSubmit={e=>{e.preventDefault();safe(async()=>{
         const cents=toCents(plan.price);if(cents===null)throw Error('Informe um valor válido em reais.');
@@ -86,6 +87,6 @@ export default function Customers3({go}) {
       </form>
       <h4>Planos disponíveis</h4>{plans.map(p=><div key={p.id} className="delta3-subscription"><strong>{p.name}</strong><span className="muted"> · {money(p.priceCents)} · {p.includedSlots??'∞'} vagas</span></div>)}
     </section>}
-    {tab==='antigos'&&<LegacyClients go={go}/>}
+    {visibleTab==='antigos'&&<LegacyClients go={go}/>}
   </div>;
 }

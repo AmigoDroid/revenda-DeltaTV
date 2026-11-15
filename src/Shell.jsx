@@ -6,7 +6,6 @@ import { logout } from "./api.js";
 import { Icon, Mark } from "./icons.jsx";
 import { PortalProvider, usePortal } from "./portal.jsx";
 import Home from "./pages/Home.jsx";
-import { OperationCenter, CENTER_CONFIG } from "./OperationCenter.jsx";
 import { useSimpleMode } from "@deltatv/ui/useSimpleMode";
 import { EasyPageGuide } from "@deltatv/ui/EasyStart";
 import WhiteLabelApps from "./WhiteLabelApps.jsx";
@@ -23,6 +22,8 @@ import Billing from "./pages/Billing.jsx";
 import FinanceiroMaster from "./pages/FinanceiroMaster.jsx";
 import Credits from "./pages/Credits.jsx";
 import Network from "./pages/Network.jsx";
+import WorkArea from "./WorkArea.jsx";
+import { WORK_AREAS, LEGACY_CENTERS, findWorkArea } from "./work-areas.js";
 import LicenseTrading from "./pages/LicenseTrading.jsx";
 import WebAccess from "./pages/WebAccess.jsx";
 import Downloads from "./pages/Downloads.jsx";
@@ -35,8 +36,8 @@ import HelpExperience from "./HelpExperience.jsx";
 
 // Cada item vira uma página. `reseller`: só aparece para quem revende licenças.
 const NAV = [
+  ...Object.values(WORK_AREAS).map(a=>({id:a.id,label:a.label,icon:a.icon,page:null,desc:a.description})),
   {id:"tvmessages",label:"Mensagens para TVs",icon:"bell",page:TvMessages,desc:"Envie comunicados aos aparelhos dos seus clientes."},
-  ...Object.entries(CENTER_CONFIG).map(([id,c])=>({id:`central-${id}`,label:c.title,icon:({pagamentos:"wallet",dispositivos:"tv",licenciamento:"ticket",ativacao:"key",conta:"user"})[id],page:OperationCenter,desc:c.intro,center:true})),
   { id: "inicio", label: "Início", icon: "home", page: Home, desc: "O que precisa da sua atenção hoje." },
   { id: "suporte", label: "Resolver problema da TV", icon: "help", page: SupportCenter, desc: "Diagnostique um cliente sem interpretar logs ou códigos técnicos." },
   { id: "ativar-tv", label: "Ativar TV", icon: "key", page: LicenseActivation, reseller: true, desc: "Ative a TV informando o MAC e aplicando uma licença. Emissão direta só para Master autorizado." },
@@ -61,20 +62,21 @@ const NAV = [
   { id: "ajuda", label: "Central de Ajuda", icon: "help", page: null, desc: "Guias e tutoriais interativos do painel." },
 ];
 // Menu por área: o dia a dia (clientes e TVs), o que vende (licenças), a ativação (códigos e servidores) e a conta.
-const SIMPLE_RESELLER = new Set(["central-ativacao", "inicio", "suporte", "ativar-tv", "clientes", "dispositivos", "estoque", "vender-licencas", "rede", "codigos", "servidores", "notificacoes", "ajuda", "conta"]);
 const GROUPS = [
-  { label: null, ids: ["inicio"] },
-  { label: "Acesso rápido", ids: ["ativar-tv", "clientes", "dispositivos", "rede"] },
-  { label: "Atendimento", ids: ["suporte", "tvmessages"] },
-  { label: "Licenças e financeiro", ids: ["vender-licencas", "estoque", "creditos", "licencas", "financeiro"] },
-  { label: "Aplicativos e servidores", ids: ["codigos", "playerweb", "servidores", "monitoramento", "white-label", "aplicativos"] },
-  { label: "Conta e suporte", ids: ["notificacoes", "loginhistory", "ajuda"] },
+  {label:null,ids:['inicio']},
+  {label:'Operação',ids:['ativar-tv','area/clientes','area/licencas']},
+  {label:'Comercial',ids:['rede','area/financeiro']},
+  {label:'Serviços e aplicativos',ids:['area/aplicativos','area/servidores']},
+  {label:'Minha conta',ids:['area/conta']},
 ];
 const ACCOUNT = [
   { id: "conta", label: "Minha conta", icon: "user", page: ProfilePage, desc: "Seu perfil e a segurança da conta." },
   { id: "ajuda", label: "Central de Ajuda", icon: "help", page: null, desc: "Tutoriais de ajuda." },
 ];
-const readRoute = () => (location.hash.startsWith("#/") ? location.hash.slice(2) : "inicio");
+const readRoute = () => {
+  const value = location.hash.startsWith("#/") ? location.hash.slice(2) : "inicio";
+  return LEGACY_CENTERS[value] || value;
+};
 
 /** Menu de perfil no cabeçalho, equivalente ao painel administrativo. */
 function UserMenu({ user, name, avatar, onAccount }) {
@@ -155,11 +157,23 @@ function Layout({ user }) {
   const go = useCallback((id) => { location.hash = `/${id}`; setOpen(false); window.scrollTo(0, 0); }, []);
   const Page = cur.page;
   const centerAllowed = id => items.some(item => item.id === id || (id.startsWith("rede/") && item.id === "rede"));
+  const workArea = !blocked ? findWorkArea(route) : null;
+  const isAreaAllowed = item => items.some(n => n.id === item.page);
+  const hasAreaAccess = workArea?.items.some(isAreaAllowed);
   const title = cur.id === "inicio" ? `Olá, ${(user.name || "").split(" ")[0] || "revendedor"}` : cur.label;
   const badge = { clientes: summary?.overdue, notificacoes: notificationCount };
   // A rede comercial possui sua própria navegação e ocupa a tela inteira.
   const networkRoute = !blocked && isReseller && (route === "rede" || route.startsWith("rede/"));
   if (networkRoute) return <Network go={go} user={user} section={route.startsWith("rede/") ? route.slice(5).split("/")[0] : "resumo"} />;
+  if (workArea && hasAreaAccess) return <WorkArea area={workArea} route={route} go={go} back={()=>go('inicio')} allowed={isAreaAllowed}
+    renderIcon={item=><Icon name={item.icon||'home'}/>}
+    renderPage={item=>{
+      const source=items.find(n=>n.id===item.page);
+      if(!source) return <p>Esta função não está disponível na sua conta.</p>;
+      if(!source.page) return <HelpExperience screen={item.page} portal="reseller" userId={user.id} onNavigate={go}/>;
+      const Page=source.page;
+      return <Page key={item.id} go={go} user={user} activeTab={item.tab} hideTabs={item.page==='clientes'}/>;
+    }} />;
 
   return (
     <div className="layout">
@@ -171,7 +185,7 @@ function Layout({ user }) {
         <div className="sidebar-context"><span className="sidebar-context-dot" /> <span>Área de trabalho</span><span className="sidebar-context-mark">Revenda</span></div>
         <nav aria-label="Principal">
           {GROUPS.map((g) => {
-            const list = items.filter((n) => g.ids.includes(n.id));
+            const list = items.filter((n) => g.ids.includes(n.id) && (!WORK_AREAS[n.id] || WORK_AREAS[n.id].items.some(section => items.some(visible => visible.id === section.page))));
             if (!list.length) return null;
             return (
               <div className="nav-group" key={g.label || "top"}>
@@ -218,7 +232,7 @@ function Layout({ user }) {
           </header>
           {simpleMode && cur.id !== "inicio" && <EasyPageGuide role="reseller" page={cur.id} onBack={() => go("inicio")} />}
           <HelpExperience screen={cur.id} portal="reseller" userId={user.id} onNavigate={go}/>
-          {Page && (cur.center ? <OperationCenter section={cur.id.replace("central-", "")} onNavigate={go} allowed={centerAllowed}/> : <Page go={go} user={user} />)}
+          {Page && <Page go={go} user={user} />}
         </main>
       </div>
     </div>
