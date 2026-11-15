@@ -22,6 +22,7 @@ import Billing from "./pages/Billing.jsx";
 import FinanceiroMaster from "./pages/FinanceiroMaster.jsx";
 import Credits from "./pages/Credits.jsx";
 import Network from "./pages/Network.jsx";
+import LicenseTrading from "./pages/LicenseTrading.jsx";
 import WebAccess from "./pages/WebAccess.jsx";
 import Downloads from "./pages/Downloads.jsx";
 import LoginHistory from "./pages/LoginHistory.jsx";
@@ -39,6 +40,7 @@ const NAV = [
   { id: "suporte", label: "Resolver problema da TV", icon: "help", page: SupportCenter, desc: "Diagnostique um cliente sem interpretar logs ou códigos técnicos." },
   { id: "clientes", label: "Clientes", icon: "users", page: Clients, reseller: true, desc: "Cadastre pessoas sem MAC, gerencie planos com várias TVs e consulte os cadastros antigos na mesma área." },
   { id: "dispositivos", label: "Dispositivos", icon: "tv", page: Devices, desc: "Busque uma TV pelo MAC, edite as listas dela e gerencie as ativações." },
+  { id: "vender-licencas", label: "Vender / comprar licenças", icon: "ticket", page: LicenseTrading, reseller: true, desc: "O Master vende licenças por Pix ou créditos e pode entregar diretamente à sua rede." },
   { id: "rede", label: "Minha rede de revendas", icon: "users", page: Network, reseller: true, desc: "Convide revendas, compre licenças do Master e gerencie sua rede." },
   { id: "estoque", label: "Estoque", icon: "box", page: StockPortal, reseller: true, desc: "Licenças disponíveis. Aplique ao MAC de um cliente (em Dispositivos) ou transfira para outro revendedor." },
   { id: "creditos", label: "Crédito", icon: "coin", page: Credits, reseller: true, desc: "Saldo pré-pago para comprar licenças. Recarregue por Pix e troque por licenças no estoque." },
@@ -57,13 +59,13 @@ const NAV = [
   { id: "ajuda", label: "Central de Ajuda", icon: "help", page: null, desc: "Guias e tutoriais interativos do painel." },
 ];
 // Menu por área: o dia a dia (clientes e TVs), o que vende (licenças), a ativação (códigos e servidores) e a conta.
-const SIMPLE_RESELLER = new Set(["central-ativacao", "inicio", "suporte", "clientes", "dispositivos", "estoque", "rede", "codigos", "servidores", "notificacoes", "ajuda", "conta"]);
+const SIMPLE_RESELLER = new Set(["central-ativacao", "inicio", "suporte", "clientes", "dispositivos", "estoque", "vender-licencas", "rede", "codigos", "servidores", "notificacoes", "ajuda", "conta"]);
 const GROUPS = [
   { label: null, ids: ["inicio"] },
   { label: "Acesso rápido", ids: ["clientes", "dispositivos", "central-ativacao"] },
   { label: "Atendimento", ids: ["suporte", "tvmessages"] },
   { label: "Comercial", ids: ["rede"] },
-  { label: "Licenças e financeiro", ids: ["estoque", "creditos", "licencas", "financeiro", "pix-master"] },
+  { label: "Licenças e financeiro", ids: ["vender-licencas", "estoque", "creditos", "licencas", "financeiro"] },
   { label: "Aplicativos e servidores", ids: ["codigos", "playerweb", "servidores", "monitoramento", "white-label", "aplicativos"] },
   { label: "Conta e suporte", ids: ["notificacoes", "loginhistory", "ajuda"] },
 ];
