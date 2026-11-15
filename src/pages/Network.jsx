@@ -17,19 +17,6 @@ const formatDate = value => value ? new Date(value).toLocaleDateString("pt-BR") 
 const waInvite = (url, name) => `https://wa.me/?text=${encodeURIComponent(`Olá! Cadastre sua revenda DeltaTV na rede de ${name}: ${url}`)}`;
 const describeInvite = invite => `${invite.uses}/${invite.maxUses == null ? "sem limite" : invite.maxUses} cadastros · ${formatDate(invite.expiresAt)}`;
 
-export function allowedNetworkSections(network) {
-  if (!network) return [NETWORK_SECTIONS[0]];
-  const master = network.account?.distributionRole === "master";
-  return NETWORK_SECTIONS.filter(section => {
-    if (section.access === "all") return true;
-    if (section.access === "master") return master;
-    if (section.access === "invite") return master && Boolean(network.policy?.canInvite);
-    if (section.access === "sell") return master && Boolean(network.policy?.canSell);
-    if (section.access === "trade") return master || Boolean(network.parent);
-    return false;
-  });
-}
-
 function SectionHeading({ eyebrow, title, description, action }) {
   return <header className="network-section-heading">
     <div><span className="network-eyebrow">{eyebrow}</span><h2>{title}</h2><p>{description}</p></div>

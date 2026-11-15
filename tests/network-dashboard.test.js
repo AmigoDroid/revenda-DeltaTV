@@ -54,3 +54,10 @@ test('rotas de convites e hierarquia são alcançáveis pela pesquisa', () => {
   assert.match(src('../src/Shell.jsx'),/id\.startsWith\("rede\/"\)/);
   assert.ok(existsSync(new URL('../src/pages/network-dashboard.css',import.meta.url)));
 });
+
+test('dashboard usa apenas a política de navegação centralizada', () => {
+  const dashboard = src('../src/pages/Network.jsx');
+  assert.match(dashboard, /import\s*\{\s*allowedNetworkSections\s*\}\s*from\s*["']\.\/network-navigation\.js["']/);
+  assert.doesNotMatch(dashboard, /(?:export\s+)?function\s+allowedNetworkSections\s*\(/);
+  assert.doesNotMatch(dashboard, /\bNETWORK_SECTIONS\b/);
+});
