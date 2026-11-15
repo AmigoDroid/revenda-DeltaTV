@@ -68,6 +68,6 @@ test('entrada do dashboard visível na página inicial e no menu rápido', () =>
   assert.match(home, /data-network-dashboard-entry="true"/);
   assert.match(home, /onClick=\{\(\) => go\("rede"\)\}/);
   assert.match(shell, /label: "Gestão da rede"/);
-  assert.match(shell, /label:'Dashboards',ids:/);
+  assert.match(shell, /label:'Acesso rápido',ids:\['ativar-tv','clientes','dispositivos','rede'\]/);
   assert.match(src('../src/pages/Network.jsx'), /data-dashboard-version="2026-11-14\.2"/);
 });

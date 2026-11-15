@@ -74,7 +74,7 @@ test('Revenda: todas as páginas dos dashboards existem em NAV', () => {
   const registered = new Set([...source.slice(start, end).matchAll(/\{\s*id:\s*["']([^"']+)["']/g)]
     .map(match => match[1]));
   for (const item of items) assert.ok(registered.has(item.page), `Falta a página ${item.page} na Revenda`);
-  assert.match(source, /const isAreaAllowed = item => items\.some\(n => n\.id === item\.page\)/);
+  assert.match(source, /resolveLegacyRoute\(value\)/);
   assert.match(source, /if \(networkRoute\) return <Network/);
-  assert.match(source, /if \(workArea && hasAreaAccess\) return <WorkArea/);
+  assert.doesNotMatch(source, /return <WorkArea/, 'sub-dashboards não fazem mais parte da navegação');
 });

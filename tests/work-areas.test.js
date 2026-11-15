@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
-import {WORK_AREAS,LEGACY_CENTERS,findWorkArea,workAreaPath} from '../src/work-areas.js';
+import {WORK_AREAS,LEGACY_CENTERS,findWorkArea,workAreaPath,resolveLegacyRoute} from '../src/work-areas.js';
 const source=file=>readFileSync(new URL(file,import.meta.url),'utf8');
 test('menu interno das áreas não repete destinos e preserva todas as tarefas comerciais',()=>{
   const areas=Object.values(WORK_AREAS);assert.ok(areas.length>=5);
@@ -14,9 +14,8 @@ test('menu interno das áreas não repete destinos e preserva todas as tarefas c
 test('dashboard separado de rede não é substituído nem duplicado',()=>{
   const shell=source('../src/Shell.jsx');
   assert.match(shell,/if \(networkRoute\) return <Network/);
-  assert.match(shell,/if \(workArea && hasAreaAccess\) return <WorkArea/);
-  assert.match(shell,/items\.some\(n => n\.id === item\.page\)/);
-  assert.match(shell,/renderPage=\{item=>\{/);
+  assert.doesNotMatch(shell,/return <WorkArea/);
+  assert.match(shell,/resolveLegacyRoute/);
   assert.ok(existsSync(new URL('../src/workspace-dashboard.css',import.meta.url)));
 });
 test('ativação de TV permanece por licença, nunca exige selecionar plano comercial',()=>{
@@ -29,5 +28,11 @@ test('ativação de TV permanece por licença, nunca exige selecionar plano come
 test('endereços antigos das centrais seguem válidos',()=>{
   assert.equal(LEGACY_CENTERS['central-pagamentos'],'area/financeiro');
   assert.equal(LEGACY_CENTERS['central-ativacao'],'area/licencas');
-  assert.match(source('../src/Shell.jsx'),/LEGACY_CENTERS\[value\]/);
+  // Os endereços antigos agora abrem direto a página real, sem sub-dashboard.
+  assert.equal(resolveLegacyRoute('central-pagamentos'),'financeiro');
+  assert.equal(resolveLegacyRoute('central-ativacao'),'ativar-tv');
+  assert.equal(resolveLegacyRoute('area/financeiro'),'inicio');
+  assert.equal(resolveLegacyRoute(workAreaPath(WORK_AREAS['area/clientes'],WORK_AREAS['area/clientes'].items[3])),'dispositivos');
+  assert.equal(resolveLegacyRoute('clientes'),'clientes');
+  assert.match(source('../src/Shell.jsx'),/resolveLegacyRoute\(value\)/);
 });

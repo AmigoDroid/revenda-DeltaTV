@@ -23,8 +23,7 @@ import Billing from "./pages/Billing.jsx";
 import FinanceiroMaster from "./pages/FinanceiroMaster.jsx";
 import Credits from "./pages/Credits.jsx";
 import Network from "./pages/Network.jsx";
-import WorkArea from "./WorkArea.jsx";
-import { WORK_AREAS, LEGACY_CENTERS, findWorkArea } from "./work-areas.js";
+import { resolveLegacyRoute } from "./work-areas.js";
 import LicenseTrading from "./pages/LicenseTrading.jsx";
 import WebAccess from "./pages/WebAccess.jsx";
 import Downloads from "./pages/Downloads.jsx";
@@ -37,7 +36,6 @@ import HelpExperience from "./HelpExperience.jsx";
 
 // Cada item vira uma página. `reseller`: só aparece para quem revende licenças.
 const NAV = [
-  ...Object.values(WORK_AREAS).map(a=>({id:a.id,label:a.label,icon:a.icon,page:null,desc:a.description})),
   {id:"tvmessages",label:"Mensagens para TVs",icon:"bell",page:TvMessages,desc:"Envie comunicados aos aparelhos dos seus clientes."},
   { id: "inicio", label: "Início", icon: "home", page: Home, desc: "O que precisa da sua atenção hoje." },
   { id: "suporte", label: "Resolver problema da TV", icon: "help", page: SupportCenter, desc: "Diagnostique um cliente sem interpretar logs ou códigos técnicos." },
@@ -62,17 +60,15 @@ const NAV = [
   { id: "conta", label: "Minha conta", icon: "user", page: ProfilePage, desc: "Dados pessoais, segurança, sessões, histórico e notificações." },
   { id: "ajuda", label: "Central de Ajuda", icon: "help", page: null, desc: "Guias e tutoriais interativos do painel." },
 ];
-// Menu por área: o dia a dia (clientes e TVs), o que vende (licenças), a ativação (códigos e servidores) e a conta.
-// Dashboards are additions. All original functions are preserved and are
-// directly accessible in the expandable "Todas as funções" section.
+// Menu único e direto (como no painel do parceiro): cada função abre a própria página,
+// sem passar por sub-dashboards. A mesma lista alimenta o menu lateral e a tela inicial.
 const GROUPS = [
   {label:null,ids:['inicio']},
-  {label:'Dashboards',ids:['area/clientes','area/licencas','area/financeiro','area/aplicativos','area/servidores','rede','area/conta']},
-  {label:'Acesso rápido',ids:['ativar-tv','clientes','dispositivos','rede'],legacy:true},
-  {label:'Atendimento',ids:['suporte','tvmessages'],legacy:true},
-  {label:'Licenças e financeiro',ids:['vender-licencas','estoque','creditos','licencas','financeiro','pix-master'],legacy:true},
-  {label:'Aplicativos e servidores',ids:['codigos','playerweb','servidores','monitoramento','white-label','aplicativos'],legacy:true},
-  {label:'Conta e suporte',ids:['conta','notificacoes','loginhistory','ajuda'],legacy:true},
+  {label:'Acesso rápido',ids:['ativar-tv','clientes','dispositivos','rede']},
+  {label:'Atendimento',ids:['suporte','tvmessages']},
+  {label:'Licenças e financeiro',ids:['vender-licencas','estoque','creditos','licencas','financeiro','pix-master']},
+  {label:'Aplicativos e servidores',ids:['codigos','playerweb','servidores','monitoramento','white-label','aplicativos']},
+  {label:'Conta e suporte',ids:['conta','notificacoes','loginhistory','ajuda']},
 ];
 const ACCOUNT = [
   { id: "conta", label: "Minha conta", icon: "user", page: ProfilePage, desc: "Seu perfil e a segurança da conta." },
@@ -80,7 +76,8 @@ const ACCOUNT = [
 ];
 const readRoute = () => {
   const value = location.hash.startsWith("#/") ? location.hash.slice(2) : "inicio";
-  return LEGACY_CENTERS[value] || value;
+  // Endereços antigos de sub-dashboards (#/area/..., #/central-...) abrem direto a função correspondente.
+  return resolveLegacyRoute(value);
 };
 
 /** Menu de perfil no cabeçalho, equivalente ao painel administrativo. */
@@ -162,13 +159,10 @@ function Layout({ user }) {
   const go = useCallback((id) => { location.hash = `/${id}`; setOpen(false); window.scrollTo(0, 0); }, []);
   const Page = cur.page;
   const centerAllowed = id => items.some(item => item.id === id || (id.startsWith("rede/") && item.id === "rede"));
-  const workArea = !blocked ? findWorkArea(route) : null;
-  const isAreaAllowed = item => items.some(n => n.id === item.page);
-  const hasAreaAccess = workArea?.items.some(isAreaAllowed);
   const title = cur.id === "inicio" ? `Olá, ${(user.name || "").split(" ")[0] || "revendedor"}` : cur.label;
   const badge = { clientes: summary?.overdue, notificacoes: notificationCount };
   const renderMenuGroup = (g) => {
-    const list = items.filter(n => g.ids.includes(n.id) && (!WORK_AREAS[n.id] || WORK_AREAS[n.id].items.some(section => items.some(visible => visible.id === section.page))));
+    const list = g.ids.map(id => items.find(n => n.id === id)).filter(Boolean);
     if (!list.length) return null;
     return <div className="nav-group" key={g.label || 'top'}>
       {g.label && <div className="nav-heading">{g.label}</div>}
@@ -184,16 +178,12 @@ function Layout({ user }) {
   // A rede comercial possui sua própria navegação e ocupa a tela inteira.
   const networkRoute = !blocked && isReseller && (route === "rede" || route.startsWith("rede/"));
   if (networkRoute) return <Network go={go} user={user} section={route.startsWith("rede/") ? route.slice(5).split("/")[0] : "resumo"} />;
-  if (workArea && hasAreaAccess) return <WorkArea area={workArea} route={route} go={go} back={()=>go('inicio')} allowed={isAreaAllowed}
-    renderIcon={item=><Icon name={item.icon||'home'}/>}
-    renderPage={item=>{
-      const source=items.find(n=>n.id===item.page);
-      if(!source) return <p>Esta função não está disponível na sua conta.</p>;
-      if(!source.page) return <HelpExperience screen={item.page} portal="reseller" userId={user.id} onNavigate={go}/>;
-      const Page=source.page;
-      return <Page key={item.id} go={go} user={user} activeTab={item.tab} hideTabs={item.page==='clientes'}/>;
-    }} />;
-
+  // Mesmas funções do menu lateral, em cartões na tela inicial (o próprio Início fica de fora).
+  const homeGroups = GROUPS.map(g => ({
+    label: g.label || "Geral",
+    items: g.ids.filter(id => id !== "inicio").map(id => items.find(n => n.id === id)).filter(Boolean)
+      .map(n => ({ id: n.id, label: n.label, icon: <Icon name={n.icon} size={16}/>, badge: showBadge ? badge[n.id] : 0 })),
+  }));
   return (
     <div className="layout">
       <aside className={`sidebar ${open ? "open" : ""}`}>
@@ -206,11 +196,7 @@ function Layout({ user }) {
           {blocked ? <div className="nav-group" aria-label="Conta com acesso restrito">
             {items.map(n => <button type="button" className={`nav ${route === n.id ? 'active' : ''}`} key={n.id} onClick={() => go(n.id)}><Icon name={n.icon}/><span>{n.label}</span></button>)}
           </div> : <>
-            {GROUPS.filter(g => !g.legacy).map(renderMenuGroup)}
-            <details className="sidebar-all-functions" defaultOpen>
-              <summary>Todas as funções · acesso direto</summary>
-              {GROUPS.filter(g => g.legacy).map(renderMenuGroup)}
-            </details>
+            {GROUPS.map(renderMenuGroup)}
           </>}
         </nav>
         <div className="sidebar-foot">
@@ -246,7 +232,7 @@ function Layout({ user }) {
           </header>
           {simpleMode && cur.id !== "inicio" && <EasyPageGuide role="reseller" page={cur.id} onBack={() => go("inicio")} />}
           <HelpExperience screen={cur.id} portal="reseller" userId={user.id} onNavigate={go}/>
-          {Page && <Page go={go} user={user} />}
+          {Page && <Page go={go} user={user} menu={homeGroups} />}
         </main>
       </div>
     </div>

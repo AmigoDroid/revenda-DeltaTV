@@ -63,3 +63,15 @@ export function visibleWorkAreaSection(area, route, allowed) {
     workAreaPath(area, item) === route || (item.id.startsWith('area/') && item.id === route)
   ) || null;
 }
+
+/** Os sub-dashboards deixaram de existir na navegação: todas as funções abrem
+ * direto no menu principal. Endereços antigos (#/area/..., #/central-...)
+ * continuam válidos e são redirecionados para a página real da função. */
+const DIRECT_CENTERS = {'central-pagamentos':'financeiro','central-dispositivos':'dispositivos','central-licenciamento':'licencas','central-ativacao':'ativar-tv','central-conta':'conta'};
+export function resolveLegacyRoute(route) {
+  if (DIRECT_CENTERS[route]) return DIRECT_CENTERS[route];
+  const area = findWorkArea(route);
+  if (!area) return route;
+  const section = area.items.find(item => workAreaPath(area, item) === route || (item.id.startsWith('area/') && item.id === route));
+  return section ? section.page : 'inicio';
+}

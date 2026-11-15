@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../api.js";
 import EasyStart from "@deltatv/ui/EasyStart";
+import AllFunctions from "../AllFunctions.jsx";
 import { Icon } from "../icons.jsx";
 import { usePortal } from "../portal.jsx";
 import { Badge, fmtDate, fmtMoney, useList, useLoad } from "../ui.jsx";
@@ -54,7 +55,7 @@ function StockPanel({ go, balances, loaded }) {
   );
 }
 
-export default function Home({ go }) {
+export default function Home({ go, menu }) {
   const { me, isReseller, summary } = usePortal();
   const [presence, setPresence] = useState(null);
   const stock = useLoad(() => (isReseller ? api("/partner/stock", { query: { page: 1, pageSize: 1 } }) : Promise.resolve(null)), [isReseller]);
@@ -87,18 +88,7 @@ export default function Home({ go }) {
         </div>
         <div className="home-hero-actions"><button type="button" className="btn primary" onClick={() => go("dispositivos")}><Icon name="tv" size={16}/> Ver dispositivos</button><button type="button" className="btn" onClick={() => go("codigos")}><Icon name="key" size={16}/> Meus códigos</button></div>
       </div>
-      <section className="dw-home-hubs" aria-labelledby="revenda-areas-heading">
-        <div className="dw-group-heading"><div><span className="dw-kicker">SEU PAINEL, ORGANIZADO</span><h2 id="revenda-areas-heading">Áreas de trabalho</h2><p>Entre na área desejada e utilize o menu exclusivo para suas funções.</p></div></div>
-        <div className="dw-home-hub-grid">
-          {[
-            ['area/clientes','Clientes e TVs','Cadastros, dispositivos e suporte','users'],
-            ['area/licencas','Licenças e ativações','Ativar TV, estoque, vendas e renovações','ticket'],
-            ['area/financeiro','Financeiro','Pagamentos, créditos e Pix','wallet'],
-            ['area/aplicativos','Aplicativos','Códigos, downloads e Player Web','download'],
-            ['area/servidores','Fontes e servidores','Links e monitoramento','server'],
-          ].map(([id,label,description,icon])=><button key={id} type="button" className="dw-home-hub" onClick={()=>go(id)}><span className="dw-card-icon"><Icon name={icon}/></span><span><strong>{label}</strong><small>{description}</small></span><Icon name="arrow-right" size={16}/></button>)}
-        </div>
-      </section>
+      <AllFunctions groups={menu} onNavigate={go} />
       {isReseller && (
         <section className="panel" aria-labelledby="network-dashboard-entry-heading" data-network-dashboard-entry="true">
           <div className="panel-head">
