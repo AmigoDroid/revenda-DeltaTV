@@ -62,12 +62,16 @@ const NAV = [
   { id: "ajuda", label: "Central de Ajuda", icon: "help", page: null, desc: "Guias e tutoriais interativos do painel." },
 ];
 // Menu por área: o dia a dia (clientes e TVs), o que vende (licenças), a ativação (códigos e servidores) e a conta.
+// Dashboards are additions. All original functions are preserved and are
+// directly accessible in the expandable "Todas as funções" section.
 const GROUPS = [
   {label:null,ids:['inicio']},
-  {label:'Operação',ids:['ativar-tv','area/clientes','area/licencas']},
-  {label:'Comercial',ids:['rede','area/financeiro']},
-  {label:'Serviços e aplicativos',ids:['area/aplicativos','area/servidores']},
-  {label:'Minha conta',ids:['area/conta']},
+  {label:'Dashboards',ids:['area/clientes','area/licencas','area/financeiro','area/aplicativos','area/servidores','rede','area/conta']},
+  {label:'Acesso rápido',ids:['ativar-tv','clientes','dispositivos','rede'],legacy:true},
+  {label:'Atendimento',ids:['suporte','tvmessages'],legacy:true},
+  {label:'Licenças e financeiro',ids:['vender-licencas','estoque','creditos','licencas','financeiro','pix-master'],legacy:true},
+  {label:'Aplicativos e servidores',ids:['codigos','playerweb','servidores','monitoramento','white-label','aplicativos'],legacy:true},
+  {label:'Conta e suporte',ids:['conta','notificacoes','loginhistory','ajuda'],legacy:true},
 ];
 const ACCOUNT = [
   { id: "conta", label: "Minha conta", icon: "user", page: ProfilePage, desc: "Seu perfil e a segurança da conta." },
@@ -162,6 +166,20 @@ function Layout({ user }) {
   const hasAreaAccess = workArea?.items.some(isAreaAllowed);
   const title = cur.id === "inicio" ? `Olá, ${(user.name || "").split(" ")[0] || "revendedor"}` : cur.label;
   const badge = { clientes: summary?.overdue, notificacoes: notificationCount };
+  const renderMenuGroup = (g) => {
+    const list = items.filter(n => g.ids.includes(n.id) && (!WORK_AREAS[n.id] || WORK_AREAS[n.id].items.some(section => items.some(visible => visible.id === section.page))));
+    if (!list.length) return null;
+    return <div className="nav-group" key={g.label || 'top'}>
+      {g.label && <div className="nav-heading">{g.label}</div>}
+      {list.map(n => <button type="button" key={n.id}
+        className={`nav ${n.id === route ? 'active' : ''}`}
+        aria-current={n.id === route ? 'page' : undefined}
+        onClick={() => go(n.id)}>
+        <Icon name={n.icon}/><span>{n.label}</span>
+        {showBadge && badge[n.id] > 0 && <b className="count">{badge[n.id]}</b>}
+      </button>)}
+    </div>;
+  };
   // A rede comercial possui sua própria navegação e ocupa a tela inteira.
   const networkRoute = !blocked && isReseller && (route === "rede" || route.startsWith("rede/"));
   if (networkRoute) return <Network go={go} user={user} section={route.startsWith("rede/") ? route.slice(5).split("/")[0] : "resumo"} />;
@@ -184,20 +202,15 @@ function Layout({ user }) {
         
         <div className="sidebar-context"><span className="sidebar-context-dot" /> <span>Área de trabalho</span><span className="sidebar-context-mark">Revenda</span></div>
         <nav aria-label="Principal">
-          {GROUPS.map((g) => {
-            const list = items.filter((n) => g.ids.includes(n.id) && (!WORK_AREAS[n.id] || WORK_AREAS[n.id].items.some(section => items.some(visible => visible.id === section.page))));
-            if (!list.length) return null;
-            return (
-              <div className="nav-group" key={g.label || "top"}>
-                {g.label && <div className="nav-heading">{g.label}</div>}
-                {list.map((n) => (
-                  <button key={n.id} className={`nav ${(n.id === cur.id || (route === "monitoramento" && n.id === "servidores")) ? "active" : ""}`} aria-current={(n.id === cur.id || (route === "monitoramento" && n.id === "servidores")) ? "page" : undefined} data-help-target={({ inicio: "home", ajuda: "help", conta: "profile", servidores: "servers", codigos: "codes", dispositivos: "devices", licencas: "licenses", financeiro: "billing", "white-label": "apps", notificacoes: "notifications" })[n.id] || undefined} onClick={() => go(n.id)}>
-                    <Icon name={n.icon} /><span>{n.label}</span>{showBadge && badge[n.id] > 0 && <b className="count">{badge[n.id]}</b>}
-                  </button>
-                ))}
-              </div>
-            );
-          })}
+          {blocked ? <div className="nav-group" aria-label="Conta com acesso restrito">
+            {items.map(n => <button type="button" className={`nav ${route === n.id ? 'active' : ''}`} key={n.id} onClick={() => go(n.id)}><Icon name={n.icon}/><span>{n.label}</span></button>)}
+          </div> : <>
+            {GROUPS.filter(g => !g.legacy).map(renderMenuGroup)}
+            <details className="sidebar-all-functions" defaultOpen>
+              <summary>Todas as funções · acesso direto</summary>
+              {GROUPS.filter(g => g.legacy).map(renderMenuGroup)}
+            </details>
+          </>}
         </nav>
         <div className="sidebar-foot">
           <span className="sidebar-foot-icon"><Icon name="shield" size={16}/></span>
