@@ -1,4 +1,4 @@
-import ValidatedInput from "../../../shared/ValidatedInput.jsx";
+import ValidatedInput from "../../shared/ValidatedInput.jsx";
 import WizardProgress from "@deltatv/ui/WizardProgress";
 import { useTaskIntent } from "@deltatv/ui/task-intent";
 import { useEffect, useState } from "react";

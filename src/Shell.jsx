@@ -1,4 +1,4 @@
-import {Breadcrumb,PlatformBrand} from "../../shared/PanelExperience.jsx";
+import {Breadcrumb,PlatformBrand} from "../shared/PanelExperience.jsx";
 import TvMessages from "./TvMessages.jsx";
 import TaskFinder from "@deltatv/ui/TaskFinder";
 import { TASKS } from "./task-directory.js";

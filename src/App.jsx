@@ -1,4 +1,4 @@
-import { panelAllows } from "../../shared/permissions.js";
+import { panelAllows } from "../shared/permissions.js";
 import { connectRealtime } from "./realtime.js";
 import { useEffect, useState } from "react";
 import { getAuth, login } from "./api.js";
