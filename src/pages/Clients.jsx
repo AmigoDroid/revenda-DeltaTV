@@ -1,3 +1,4 @@
+import ValidatedInput from "../../../shared/ValidatedInput.jsx";
 import WizardProgress from "@deltatv/ui/WizardProgress";
 import { useTaskIntent } from "@deltatv/ui/task-intent";
 import { useEffect, useState } from "react";
@@ -215,13 +216,13 @@ function ClientModal({ row, onClose, onSaved }) {
         {!existing && <WizardProgress steps={['Identificação','Informações opcionais','Confirmar']} step={step}/>}
         {(existing || step===0) && <div className="row">
           <Field label="MAC da TV" hint={macLocked ? "TV já ativada por você." : "Pode ser de uma TV ainda não ativada."}>
-            <input className="mono" value={f.mac} onChange={set("mac")} placeholder="AA:BB:CC:DD:EE:FF" readOnly={macLocked} required autoFocus={row.isNew} />
+            <ValidatedInput kind="mac" className="mono" value={f.mac} onChange={set("mac")} placeholder="AA:BB:CC:DD:EE:FF" readOnly={macLocked} required autoFocus={row.isNew} />
           </Field>
           <Field label="Nome do cliente"><input value={f.name} onChange={set("name")} maxLength={160} required autoFocus={!row.isNew} /></Field>
         </div>}
         {(existing || step===1) && <>
         <div className="row">
-          <Field label="Telefone / WhatsApp"><input value={f.phone} onChange={set("phone")} placeholder="(85) 99999-0000" inputMode="tel" maxLength={30} /></Field>
+          <Field label="Telefone / WhatsApp"><ValidatedInput kind="phone" value={f.phone} onChange={set("phone")} placeholder="(85) 99999-0000" inputMode="tel" maxLength={30} /></Field>
           <Field label="Valor cobrado (R$)" hint="Opcional. Ex.: 30,00"><input value={f.price} onChange={set("price")} placeholder="30,00" inputMode="decimal" /></Field>
         </div>
         <div className="row">

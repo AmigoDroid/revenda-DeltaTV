@@ -1,123 +1,15 @@
-// Cliente da API. Tokens de acesso são curtos; o refresh é rotacionado a cada uso.
-// A autorização real acontece no backend: esconder botões aqui é só conveniência de UI.
+import { createApiClient, ApiError } from "../../shared/api-client.js";
+export { ApiError };
 const API = (import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:3000" : "")).replace(/\/+$/, "");
-if (!API || !/^https?:\/\//i.test(API) || (import.meta.env.PROD && !API.startsWith("https://"))) {
-  throw new Error("VITE_API_URL deve apontar para uma API válida via HTTPS em produção.");
-}
-const KEY = "iptv-reseller-auth"; // chave própria: não mistura sessão com o painel admin
-
-let auth = (() => { try { return JSON.parse(localStorage.getItem(KEY)); } catch { return null; } })();
-const save = (a) => {
-  auth = a;
-  if (a) localStorage.setItem(KEY, JSON.stringify(a)); else localStorage.removeItem(KEY);
-  window.dispatchEvent(new Event("auth-changed"));
-};
-export const getAuth = () => auth;
-export const updateAuthUser = (user) => { if (auth?.user && user?.id === auth.user.id) save({ ...auth, user: { ...auth.user, ...user } }); };
-
-export class ApiError extends Error {
-  constructor(status, data) {
-    super(data?.message || "Não foi possível concluir a operação.");
-    this.status = status;
-    this.code = data?.code;
-    this.details = data?.details;
-  }
-}
-
-async function raw(path, { method = "GET", body, query, token, signal } = {}) {
-  const url = new URL(`${API}/api/v1${path}`);
-  Object.entries(query || {}).forEach(([k, v]) => { if (v !== "" && v != null) url.searchParams.set(k, v); });
-  let res;
-  try {
-    res = await fetch(url, {
-      method,
-      signal,
-      headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: body != null ? JSON.stringify(body) : undefined,
-    });
-  } catch (error) {
-    if (error.name === "AbortError") throw error;
-    // fetch só rejeita por falha de rede/CORS: a mensagem padrão do navegador ("Failed to fetch") não ajuda ninguém.
-    throw new ApiError(0, { code: "NETWORK", message: "Não foi possível conectar ao servidor. Verifique a conexão e tente novamente." });
-  }
-  const data = res.status === 204 ? null : await res.json().catch(() => null);
-  if (!res.ok) throw new ApiError(res.status, data);
-  return data;
-}
-
-// Sincroniza login/logout/rotação entre abas do mesmo painel.
-window.addEventListener("storage", event => {
-  if (event.key !== KEY && event.key !== null) return;
-  try { auth = JSON.parse(localStorage.getItem(KEY)); } catch { auth = null; }
-  window.dispatchEvent(new Event("auth-changed"));
-});
-let refreshing = null;
-async function rotate() {
-  const current = auth;
-  if (!current?.refreshToken) throw new ApiError(401, { code: "INVALID_TOKEN", message: "Entre novamente para continuar." });
-  try {
-    const stored = JSON.parse(localStorage.getItem(KEY));
-    if (stored?.refreshToken && stored.refreshToken !== current.refreshToken) { save(stored); return; }
-    const data = await raw("/auth/refresh", { method: "POST", body: { refreshToken: current.refreshToken } });
-    // Uma resposta atrasada nunca pode desfazer logout ou substituir outro login.
-    if (auth !== current) return;
-    save({ accessToken: data.accessToken, refreshToken: data.refreshToken, user: data.user });
-  } catch (error) {
-    if (auth === current && error.status === 401) save(null);
-    throw error;
-  }
-}
-function refresh() {
-  return refreshing ??= (globalThis.navigator?.locks
-    ? navigator.locks.request(KEY + ":refresh", rotate)
-    : rotate()).finally(() => { refreshing = null; });
-}
-// O socket também precisa renovar tokens: uma tela ociosa pode não fazer chamadas HTTP.
-export async function ensureAccessToken() {
-  const token = auth?.accessToken;
-  if (!token) return null;
-  let exp;
-  try { exp = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).exp; } catch { exp = 0; }
-  if (!Number.isFinite(exp) || exp * 1000 <= Date.now() + 30000) await refresh();
-  return auth?.accessToken || null;
-}
-export async function api(path, opts = {}, retry = true) {
-  const token = auth?.accessToken;
-  try {
-    return await raw(path, { ...opts, token });
-  } catch (error) {
-    if (error.status === 401 && error.code === "INVALID_TOKEN" && retry && auth?.refreshToken) {
-      // Resposta de uma chamada antiga: reutiliza a renovação que já terminou.
-      if (auth.accessToken === token) await refresh();
-      if (!auth?.accessToken) throw error;
-      return api(path, opts, false);
-    }
-    throw error;
-  }
-}
-
-export async function login(email, password) {
-  const d = await raw("/auth/login", { method: "POST", body: { email, password, audience: "partner" } });
-  save({ accessToken: d.accessToken, refreshToken: d.refreshToken, user: d.user });
-}
-export async function logout() {
-  const t = auth?.refreshToken;
-  save(null);
-  if (t) await raw("/auth/logout", { method: "POST", body: { refreshToken: t } }).catch(() => {});
-}
-
+if (!API || !/^https?:\/\//i.test(API) || (import.meta.env.PROD && !API.startsWith("https://"))) throw new Error("VITE_API_URL deve apontar para uma API válida via HTTPS em produção.");
+const client = createApiClient({ baseUrl: API, key: "iptv-reseller-auth", audience: "partner" });
+export const { getAuth, api, login, logout, ensureAccessToken, acceptSession, endImpersonation } = client;
+export const updateAuthUser = client.updateAuthUser;
+const { raw, refresh } = client;
 // Acesso por MAC + chave de 6 dígitos (/device-access). O token dessa sessão é limitado a UM dispositivo e fica só em memória
 // (nunca em localStorage): fechar a aba encerra o acesso.
-export async function deviceApi(path, { method = "GET", body, token } = {}) {
-  const res = await fetch(new URL(`${API}/api/v1/device-access${path}`), {
-    method,
-    headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    body: body != null ? JSON.stringify(body) : undefined,
-  });
-  if (res.status === 204) return null;
-  const data = await res.json().catch(() => null);
-  if (!res.ok) throw new ApiError(res.status, data);
-  return data;
+export async function deviceApi(path, { method = "GET", body, token, signal } = {}) {
+  return raw(`/device-access${path}`, { method, body, token, signal });
 }
 
 // Cadastro público de revendedor (sem login). A resposta é a mesma para qualquer e-mail.

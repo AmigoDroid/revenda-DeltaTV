@@ -1,3 +1,4 @@
+import { panelAllows } from "../../shared/permissions.js";
 import { connectRealtime } from "./realtime.js";
 import { useEffect, useState } from "react";
 import { getAuth, login } from "./api.js";
@@ -57,10 +58,10 @@ export default function App() {
     setView(next);
   };
   // Só contas de revendedor/parceiro usam este portal (o servidor também recusa as demais).
-  const user = auth?.user?.role === "partner" ? auth.user : null;
+  const user = panelAllows("revenda", auth?.user) ? auth.user : null;
   return (
     <UiProvider>
-      {user ? <Shell user={user} /> : view === "register"
+      {user ? <Shell key={user.id} user={user} /> : view === "register"
         ? <Register onBack={() => show("login")} />
         : view === "forgot"
           ? <ForgotPassword initialEmail={forgotEmail} onBack={() => show("login")} />

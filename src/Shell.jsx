@@ -1,3 +1,4 @@
+import {Breadcrumb,PlatformBrand} from "../../shared/PanelExperience.jsx";
 import TvMessages from "./TvMessages.jsx";
 import TaskFinder from "@deltatv/ui/TaskFinder";
 import { TASKS } from "./task-directory.js";
@@ -196,7 +197,7 @@ function Layout({ user }) {
   return (
     <div className="layout">
       <aside className={`sidebar ${open ? "open" : ""}`}>
-        <div className="brand"><span className="brand-icon"><Mark size={38} /></span><div><strong>Delta<span>TV</span></strong><small>PAINEL DA REVENDA</small></div>
+        <div className="brand"><span className="brand-icon"><Mark size={38} /></span><div><strong><PlatformBrand/></strong><small>PAINEL DA REVENDA</small></div>
           <button className="icon sidebar-close" type="button" aria-label="Fechar menu" onClick={() => setOpen(false)}><Icon name="x" size={20}/></button>
         </div>
         
@@ -238,7 +239,7 @@ function Layout({ user }) {
           <div className="unread-banner-copy"><strong>{notificationCount === 1 ? "Você tem 1 mensagem não lida" : `Você tem ${notificationCount} mensagens não lidas`}</strong><span>Há comunicados da Delta TV aguardando sua leitura.</span></div>
           <button type="button" className="btn primary" onClick={() => go("notificacoes")}>Ler mensagens <Icon name="arrow-right" size={15}/></button>
         </div>}
-        <main className="content">
+        <main className="content"><Breadcrumb panel="revenda" current={cur.label} onHome={()=>go("inicio")}/>
           <TaskFinder tasks={TASKS.filter(task=>centerAllowed(task.route))} onNavigate={go} />
           <header className="page-title">
             <div className="page-title-copy"><span className="page-eyebrow">DELTA TV <span>/</span> {cur.label.toUpperCase()}</span><h1>{title}</h1>{cur.desc && <p className="muted">{cur.desc}</p>}</div>
