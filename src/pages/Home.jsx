@@ -86,6 +86,20 @@ export default function Home({ go }) {
         </div>
         <div className="home-hero-actions"><button type="button" className="btn primary" onClick={() => go("dispositivos")}><Icon name="tv" size={16}/> Ver dispositivos</button><button type="button" className="btn" onClick={() => go("codigos")}><Icon name="key" size={16}/> Meus códigos</button></div>
       </div>
+      {isReseller && (
+        <section className="panel" aria-labelledby="network-dashboard-entry-heading" data-network-dashboard-entry="true">
+          <div className="panel-head">
+            <div>
+              <h3 id="network-dashboard-entry-heading">Gestão da rede de revendas</h3>
+              <p className="muted">Dashboard separado com menu próprio para revendas, convites, hierarquia, permissões, comissões e vendas de licenças.</p>
+            </div>
+            <button type="button" className="btn primary" onClick={() => go("rede")}>
+              <Icon name="users" size={16}/> Abrir dashboard da rede <Icon name="arrow-right" size={16}/>
+            </button>
+          </div>
+        </section>
+      )}
+
       {isReseller && summary && (
         <div className={`attn ${attention.length ? "" : "ok"}`}>
           {attention.length ? <>

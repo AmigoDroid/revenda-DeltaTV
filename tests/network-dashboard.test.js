@@ -61,3 +61,13 @@ test('dashboard usa apenas a política de navegação centralizada', () => {
   assert.doesNotMatch(dashboard, /(?:export\s+)?function\s+allowedNetworkSections\s*\(/);
   assert.doesNotMatch(dashboard, /\bNETWORK_SECTIONS\b/);
 });
+
+test('entrada do dashboard visível na página inicial e no menu rápido', () => {
+  const home=src('../src/pages/Home.jsx');
+  const shell=src('../src/Shell.jsx');
+  assert.match(home, /data-network-dashboard-entry="true"/);
+  assert.match(home, /onClick=\{\(\) => go\("rede"\)\}/);
+  assert.match(shell, /label: "Gestão da rede"/);
+  assert.match(shell, /label: "Acesso rápido", ids: \["clientes", "dispositivos", "rede"/);
+  assert.match(src('../src/pages/Network.jsx'), /data-dashboard-version="2026-11-14\.2"/);
+});

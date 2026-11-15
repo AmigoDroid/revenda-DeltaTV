@@ -194,14 +194,14 @@ export default function Network({ go, section = "resumo", user }) {
 
   const title = current.label;
   const description = current.description;
-  return <div className="network-dashboard">
+  return <div className="network-dashboard" data-dashboard="rede-v3" data-dashboard-version="2026-11-14.2">
     {menuOpen && <button className="network-backdrop" type="button" aria-label="Fechar menu da rede" onClick={() => setMenuOpen(false)} />}
     <aside ref={sidebarRef} className={`network-sidebar ${menuOpen ? "network-sidebar-open" : ""}`} aria-label="Navegação da rede" aria-hidden={compact && !menuOpen ? "true" : undefined} inert={compact && !menuOpen ? "" : undefined}>
       <div className="network-sidebar-brand"><span className="network-logo"><Mark size={34}/></span>
         <div><strong>Delta<span>TV</span></strong><small>GESTÃO DA REDE</small></div>
       </div>
       <button type="button" className="network-back-button" onClick={() => go("inicio")}>← <span>Voltar ao painel principal</span></button>
-      <div className="network-sidebar-group">PAINEL DA REDE</div>
+      <div className="network-sidebar-group">DASHBOARD EXCLUSIVO · REDE DE REVENDA</div>
       <nav className="network-sidebar-nav" aria-label="Seções da rede de revendas">
         {sections.map(item => <button key={item.id} type="button" className={`network-nav-item ${active === item.id ? "network-nav-active" : ""}`}
           aria-current={active === item.id ? "page" : undefined} onClick={() => changeSection(item.id)}>

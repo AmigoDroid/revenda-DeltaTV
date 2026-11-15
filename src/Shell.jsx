@@ -41,7 +41,7 @@ const NAV = [
   { id: "clientes", label: "Clientes", icon: "users", page: Clients, reseller: true, desc: "Cadastre pessoas sem MAC, gerencie planos com várias TVs e consulte os cadastros antigos na mesma área." },
   { id: "dispositivos", label: "Dispositivos", icon: "tv", page: Devices, desc: "Busque uma TV pelo MAC, edite as listas dela e gerencie as ativações." },
   { id: "vender-licencas", label: "Vender / comprar licenças", icon: "ticket", page: LicenseTrading, reseller: true, desc: "O Master vende licenças por Pix ou créditos e pode entregar diretamente à sua rede." },
-  { id: "rede", label: "Minha rede de revendas", icon: "users", page: Network, reseller: true, desc: "Convide revendas, compre licenças do Master e gerencie sua rede." },
+  { id: "rede", label: "Gestão da rede", icon: "users", page: Network, reseller: true, desc: "Abra o dashboard exclusivo para suas revendas, convites, hierarquia, comissões e vendas." },
   { id: "estoque", label: "Estoque", icon: "box", page: StockPortal, reseller: true, desc: "Licenças disponíveis. Aplique ao MAC de um cliente (em Dispositivos) ou transfira para outro revendedor." },
   { id: "creditos", label: "Crédito", icon: "coin", page: Credits, reseller: true, desc: "Saldo pré-pago para comprar licenças. Recarregue por Pix e troque por licenças no estoque." },
   { id: "licencas", label: "Licenças", icon: "ticket", page: Licenses, reseller: true, desc: "As licenças do seu estoque em uso: veja o prazo de cada uma, renove, suspenda ou reative." },
@@ -62,9 +62,8 @@ const NAV = [
 const SIMPLE_RESELLER = new Set(["central-ativacao", "inicio", "suporte", "clientes", "dispositivos", "estoque", "vender-licencas", "rede", "codigos", "servidores", "notificacoes", "ajuda", "conta"]);
 const GROUPS = [
   { label: null, ids: ["inicio"] },
-  { label: "Acesso rápido", ids: ["clientes", "dispositivos", "central-ativacao"] },
+  { label: "Acesso rápido", ids: ["clientes", "dispositivos", "rede", "central-ativacao"] },
   { label: "Atendimento", ids: ["suporte", "tvmessages"] },
-  { label: "Comercial", ids: ["rede"] },
   { label: "Licenças e financeiro", ids: ["vender-licencas", "estoque", "creditos", "licencas", "financeiro"] },
   { label: "Aplicativos e servidores", ids: ["codigos", "playerweb", "servidores", "monitoramento", "white-label", "aplicativos"] },
   { label: "Conta e suporte", ids: ["notificacoes", "loginhistory", "ajuda"] },
