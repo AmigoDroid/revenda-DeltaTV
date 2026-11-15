@@ -190,3 +190,35 @@ section+section{margin-top:26px}
  .modal-body{padding:14px}
 }
 @media(max-width:380px){.table-wrap tbody td{grid-template-columns:minmax(73px,34%) minmax(0,1fr)}.content{padding-inline:9px}}
+
+/* Dispositivos: cartões compactos no celular, com a ação principal sempre acessível.
+   Os dados da tabela permanecem no desktop e as ferramentas de gerenciamento não são removidas. */
+@media(max-width:700px) {
+  .device-list .table-wrap tbody { gap: 9px; }
+  .device-list .table-wrap tbody tr { padding: 10px 12px; content-visibility:auto; contain-intrinsic-size: 150px; }
+  .device-list .table-wrap tbody td { padding: 5px 0; border-bottom:0; align-items:center; }
+  .device-list .table-wrap tbody td:nth-child(1) { font-size:14px; font-weight:700; }
+  .device-list .table-wrap tbody td.actions { border-top:1px solid var(--line); margin-top:6px; }
+  .device-list .table-wrap tbody td:nth-child(2),
+  .device-list .table-wrap tbody td:nth-child(4),
+  .device-list .table-wrap tbody td:nth-child(7) { display:none; }
+  .device-list .mobile-device-details { display:block!important; border-top:1px solid var(--line); padding-top:5px; }
+  .device-list .mobile-device-details::before { display:none!important; }
+  .device-list .mobile-device-details summary { min-height:40px; display:flex; align-items:center; cursor:pointer; font-weight:600; color:var(--text-soft); }
+  .device-list .mobile-device-details details > div { padding:5px 0; font-size:12px; overflow-wrap:anywhere; }
+}
+@media(min-width:701px) {
+  .device-list .mobile-device-details, .device-list .mobile-details-header { display:none; }
+}
+
+/* Tabelas legadas sem rótulos declarativos mantêm rolagem horizontal utilizável
+   em vez de cartões anônimos; as tabelas migradas usam cartões compactos. */
+@media(max-width:700px){
+  .table-wrap:not(.labeled-table-wrap) { overflow-x:auto;overflow-y:visible;max-width:100%;-webkit-overflow-scrolling:touch; }
+  .table-wrap:not(.labeled-table-wrap) table { display:table;width:100%;min-width:600px;border-collapse:collapse; }
+  .table-wrap:not(.labeled-table-wrap) thead { display:table-header-group; }
+  .table-wrap:not(.labeled-table-wrap) tbody { display:table-row-group; }
+  .table-wrap:not(.labeled-table-wrap) tr { display:table-row;background:transparent;padding:0;box-shadow:none;border:0; }
+  .table-wrap:not(.labeled-table-wrap) th,.table-wrap:not(.labeled-table-wrap) td { display:table-cell;width:auto;min-width:auto;padding:8px;white-space:normal; }
+  .table-wrap:not(.labeled-table-wrap) td::before { display:none; }
+}

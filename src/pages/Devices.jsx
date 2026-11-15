@@ -7,7 +7,7 @@ import DeviceListsModal from "./DeviceListsModal.jsx";
 import { NewWebAccess } from "./WebAccess.jsx";
 import { Badge, Empty, OnlineBadge, PlatformBadge, accessStatus, Pager, Table, fmtDate, fmtDateTime, useAction, RowMenu, useDebounced, useList, useUi } from "../ui.jsx";
 
-const REFRESH_MS = 20000;
+const REFRESH_MS = 60000; // fallback quando o WebSocket não informa mudanças; evita refazer a lista a cada 20 s
 
 export default function Devices({ go }) {
   const { isReseller } = usePortal();
@@ -25,9 +25,9 @@ export default function Devices({ go }) {
   const busy = transfer || viewMac;
   useEffect(() => {
     if (busy) return undefined;
-    const t = setInterval(() => { if (!document.hidden) devices.reload(); }, REFRESH_MS);
+    const t = setInterval(() => { if (!document.hidden && !devices.loading) devices.reload({ passive: true }); }, REFRESH_MS);
     return () => clearInterval(t);
-  }, [busy, devices.reload]);
+  }, [busy, devices.reload, devices.loading]);
 
   const change = async (a, action, o) => {
     const c = await confirm(o);
@@ -47,7 +47,7 @@ export default function Devices({ go }) {
             <option value="">Online e offline</option><option value="true">Só online</option><option value="false">Só offline</option>
           </select>
         </div>
-        <Table><thead><tr><th>MAC</th><th>Tipo</th><th>Conexão</th><th>Assistindo / IP</th><th>Status</th><th>Licença vence em</th><th>Ativado em</th><th /></tr></thead><tbody>{devices.data.map((a) => {
+        <div className="device-list"><Table><thead><tr><th>MAC</th><th>Tipo</th><th>Conexão</th><th>Assistindo / IP</th><th>Status</th><th>Licença vence em</th><th>Ativado em</th><th /><th className="mobile-details-header">Informações</th></tr></thead><tbody>{devices.data.map((a) => {
           const lic = a.grantedLicense;
           const live = !!lic && lic.status === "active" && lic.remainingDays > 0;
           return (
@@ -62,8 +62,14 @@ export default function Devices({ go }) {
                   { label: "Desbloquear", hidden: a.status !== "blocked", onClick: () => change(a, "unblock", { title: "Desbloquear", message: a.mac }) },
                   { label: "Remover", danger: true, hidden: a.status === "revoked", disabled: live, title: live ? "Com licença em andamento, use Transferir MAC: remover perderia o tempo restante." : undefined, onClick: () => change(a, "revoke", { title: "Remover ativação", message: a.mac, danger: true }) },
                 ]} />
-              </td></tr>);
-        })}</tbody></Table>
+              </td>
+              <td className="mobile-device-details" data-label="Informações"><details><summary>Mais informações da TV</summary>
+                <div>Tipo: <PlatformBadge platform={a.platform}/></div>
+                <div>Reprodução: {a.live?.playback?.title || 'Sem telemetria atual'}</div>
+                <div>IP: {a.live?.online ? a.live.ip || 'indisponível' : 'offline'}</div>
+                <div>Ativada em: {fmtDateTime(a.activatedAt)}</div>
+              </details></td></tr>);
+        })}</tbody></Table></div>
         <Empty loading={devices.loading} error={devices.error} count={devices.data.length} /><Pager meta={devices.meta} onPage={devices.setPage} />
       </section>
       {webFor && <NewWebAccess initial={{ mac: webFor.mac }} onClose={() => setWebFor(null)} />}
