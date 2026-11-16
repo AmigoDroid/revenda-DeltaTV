@@ -259,3 +259,10 @@ input[type=checkbox],input[type=radio]{accent-color:#6195ff}
 
 /* Contraste consistente da busca compartilhada no tema escuro. */
 .task-finder{--ui-surface:#19263e;--ui-text:#f1f6ff;--ui-border:#5b7096;--ui-accent:#a49af9;--ui-hover:#304267}
+
+/* Tokens compartilhados, sem alterar a semântica de Revenda/TV */
+:root{--deltatv-accent:#8394ff;--deltatv-radius:14px;--deltatv-font:Inter,system-ui,sans-serif}
+.brand small,.sidebar-context-mark{font-size:12px}
+button{min-height:36px}button:focus-visible{outline:3px solid #96aaff;outline-offset:2px}
+@media(max-width:700px){.table-wrap button,.rowmenu button{min-height:44px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}

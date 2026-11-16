@@ -64,7 +64,7 @@ export default function MasterSelfIssuance({onIssued}) {
         <button type="button" className="btn" disabled={busy} onClick={verify}>Verificar no servidor</button>
         {verifiedAbsent&&<button type="button" className="btn" disabled={busy} onClick={()=>{if(window.confirm("A última consulta não encontrou a emissão. Descartar a tentativa?")){finish();setNotice("");}}}>Descartar tentativa</button>}
       </div>}
-    </>:<p className="muted">Emissão pré-paga desativada pelo Superadmin. As licenças já existentes continuam disponíveis.</p>}
+    </>:<p className="muted">Emissão pré-paga desativada pelo DeltaTV. As licenças já existentes continuam disponíveis.</p>}
     {error&&<p role="alert" className="error">{error}</p>}
     {notice&&<p role="status" style={{color:"var(--ok)"}}>{notice}</p>}
   </section>;

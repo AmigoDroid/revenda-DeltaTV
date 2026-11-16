@@ -222,3 +222,8 @@ section+section{margin-top:26px}
   .table-wrap:not(.labeled-table-wrap) th,.table-wrap:not(.labeled-table-wrap) td { display:table-cell;width:auto;min-width:auto;padding:8px;white-space:normal; }
   .table-wrap:not(.labeled-table-wrap) td::before { display:none; }
 }
+
+/* Auditoria UX: rolagem vertical não pode ser capturada pela listagem */
+.table-wrap{touch-action:pan-x pan-y;overscroll-behavior-x:contain;max-width:100%}
+.table-wrap table{touch-action:pan-x pan-y}
+@media(max-width:700px){.table-wrap:not(.labeled-table-wrap){-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y}.table-wrap tbody td::before{font-size:12px}}
