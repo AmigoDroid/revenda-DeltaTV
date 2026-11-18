@@ -1,7 +1,8 @@
 import { panelAllows } from "../shared/permissions.js";
 import { connectRealtime } from "./realtime.js";
 import { useEffect, useState } from "react";
-import { getAuth, login } from "./api.js";
+import { getAuth, login, logout, api, acceptSession } from "./api.js";
+import AdminPortalAccounts from "@deltatv/ui/AdminPortalAccounts";
 import { UiProvider, Field, useAction } from "./ui.jsx";
 import Shell from "./Shell.jsx";
 import { Mark, Bars } from "./icons.jsx";
@@ -61,7 +62,9 @@ export default function App() {
   const user = panelAllows("revenda", auth?.user) ? auth.user : null;
   return (
     <UiProvider>
-      {user ? <Shell key={user.id} user={user} /> : view === "register"
+      {auth?.user?.role === 'portal_select' && auth?.user?.portalAdmin
+        ? <AdminPortalAccounts api={api} acceptSession={acceptSession} getAuth={getAuth} logout={logout} portalName="o Painel da Revenda" selectionOnly />
+        : user ? <Shell key={`${user.id}:${user.partnerId}`} user={user} /> : view === "register"
         ? <Register onBack={() => show("login")} />
         : view === "forgot"
           ? <ForgotPassword initialEmail={forgotEmail} onBack={() => show("login")} />

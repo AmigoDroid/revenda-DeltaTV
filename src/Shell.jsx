@@ -1,9 +1,10 @@
+import AdminPortalAccounts from "@deltatv/ui/AdminPortalAccounts";
 import {Breadcrumb,PlatformBrand} from "../shared/PanelExperience.jsx";
 import TvMessages from "./TvMessages.jsx";
 import TaskFinder from "@deltatv/ui/TaskFinder";
 import { TASKS } from "./task-directory.js";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { logout } from "./api.js";
+import { logout, api, acceptSession, getAuth } from "./api.js";
 import { Icon, Mark } from "./icons.jsx";
 import { PortalProvider, usePortal } from "./portal.jsx";
 import Home from "./pages/Home.jsx";
@@ -210,6 +211,7 @@ function Layout({ user }) {
           <button type="button" className="icon menu-btn" aria-label="Abrir menu" aria-expanded={open} onClick={() => setOpen(true)}><Icon name="menu" size={22} /></button>
           <div className="topbar-context"><span className="topbar-eyebrow">PAINEL DA REVENDA</span><strong className="topbar-title">{cur.label}</strong></div>
           <div className="topbar-tools">
+            {user.portalAdmin && <AdminPortalAccounts api={api} acceptSession={acceptSession} getAuth={getAuth} portalName="o Painel da Revenda" />}
             {!blocked && <button className="btn primary sm" type="button" onClick={()=>{go("ativar-tv");}}>Ativar TV</button>}
             
             <button type="button" className="btn sm" data-help-target="context-help" onClick={() => window.dispatchEvent(new CustomEvent("deltatv-help-context", { detail: { screen: cur.id } }))}>? Ajuda</button>
