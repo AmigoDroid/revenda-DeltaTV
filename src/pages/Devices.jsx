@@ -61,7 +61,7 @@ export default function Devices({ go }) {
           </select>
         </div>
         {bulk.toolbar}
-      <div className="device-list"><Table><thead><tr><th>MAC</th><th>Tipo</th><th>Conexão</th><th>Assistindo / IP</th><th>Status</th><th>Licença vence em</th><th>Ativado em</th><th /><th className="mobile-details-header">Informações</th></tr></thead><tbody>{devices.data.map((a) => {
+      <div className="device-list delta-tv-list"><Table><thead><tr><th>MAC</th><th>Tipo</th><th>Conexão</th><th>Assistindo / IP</th><th>Status</th><th>Licença vence em</th><th>Ativado em</th><th /><th className="mobile-details-header">Informações</th></tr></thead><tbody>{devices.data.map((a) => {
           const lic = a.grantedLicense;
           const live = !!lic && lic.status === "active" && lic.remainingDays > 0;
           return (
