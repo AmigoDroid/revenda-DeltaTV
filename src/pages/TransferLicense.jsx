@@ -14,6 +14,8 @@ export default function TransferLicense({ activation, onClose, onDone }) {
   const lic = activation.grantedLicense;
   const target = formatMac(mac);
 
+  const sameDevice = !!target && target === formatMac(activation.mac);
+
   const submit = async () => {
     const c = await confirm({
       title: "Transferir licença para outro MAC", danger: true, confirmLabel: "Transferir",
@@ -37,7 +39,9 @@ export default function TransferLicense({ activation, onClose, onDone }) {
         <input value={mac} onChange={(e) => setMac(e.target.value)} placeholder="AA:BB:CC:DD:EE:FF" autoComplete="off" spellCheck={false} />
       </Field>
       {mac && !target && <p className="error">MAC inválido: use 12 dígitos hexadecimais.</p>}
-      <div className="actions"><button className="btn" onClick={onClose}>Cancelar</button><button className="btn primary" disabled={!target} onClick={submit}>Transferir</button></div>
+      {sameDevice && <p className="error">Informe um aparelho diferente do atual.</p>}
+      {target && !sameDevice && <div className="delta-transfer-review"><small>Destino da licença</small><strong>{target}</strong><span>Validade até {fmtDate(lic.expiresAt)}</span></div>}
+      <div className="actions"><button className="btn" onClick={onClose}>Cancelar</button><button className="btn primary" disabled={!target || sameDevice} onClick={submit}>Transferir</button></div>
     </Modal>
   );
 }

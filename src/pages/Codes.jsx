@@ -1,3 +1,5 @@
+import { useBulkRemoval } from "../../shared/useBulkRemoval.jsx";
+import { Modal } from "../ui.jsx";
 import { useState } from "react";
 import DeletionDialog from "../DeletionDialog.jsx";
 import { api } from "../api.js";
@@ -12,14 +14,25 @@ export default function Codes() {
   const [newCode, setNewCode] = useState(false);
   const [deleting,setDeleting] = useState(null);
   const [editCode, setEditCode] = useState(null);
+  const bulk = useBulkRemoval({
+    Modal, rows: codes, scope: me?.id, id: c => c.id, label: c => c.code,
+    description: "Os códigos serão excluídos da lista e deixarão de aceitar novas ativações.",
+    preview: async c => {
+      const info = await api(`/partner/codes/${c.id}/deletion-preview`);
+      return `${info.liveActivations} ativação(ões) vigente(s) · ${info.financialCharges} lançamento(s) · ${info.pools} vínculo(s) com servidores`;
+    },
+    remove: c => api(`/partner/codes/${c.id}`, { method: "DELETE", body: { confirmation: c.code } }),
+    refresh: loadCodes,
+  });
   const revoke = async (c) => { if (await confirm({ title: "Revogar código", message: "Impede novas ativações com este código.", danger: true }) && await run(() => api(`/partner/codes/${c.id}/revoke`, { method: "POST" }), "Código revogado.")) loadCodes(); };
   return (
     <>
       {isReseller && <p className="muted">Cada código é atrelado a uma licença do seu estoque: quando um cliente ativa a TV com ele, 1 licença daquela duração é usada e o prazo começa a contar.</p>}
       <div className="actions left"><button className="btn primary" data-help-target="new-code" onClick={() => setNewCode(true)}>Novo código</button></div>
+      {bulk.toolbar}
       <Table><thead><tr><th>Código</th><th>Servidor</th>{isReseller && <th>Licença</th>}<th>Status</th><th>Ativações</th><th /></tr></thead><tbody>{codes.map((c) => (
         <tr key={c.id}>
-          <td><strong>{c.code}</strong></td>
+          <td>{bulk.checkbox(c)}<strong>{c.code}</strong></td>
           <td>{c.provider?.name || <span className="muted">Qualquer servidor</span>}</td>
           {isReseller && <td>{c.licenseMonths
             ? <>{monthsLabel(c.licenseMonths)} · <span style={c.stockAvailable === 0 ? { color: "var(--bad)" } : undefined}>{c.stockAvailable} em estoque</span>{c.status === "active" && c.stockAvailable === 0 && <div className="error">Sem estoque: novas ativações serão recusadas.</div>}</>

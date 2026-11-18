@@ -131,13 +131,13 @@ export default function Credits() {
   const credit = o.data;
   return (
     <section>
-      <div className="grid cards">
-        <div className="card stat"><small>Seu saldo</small><strong>{credit.balance}</strong><span>{credit.balance === 1 ? "crédito" : "créditos"}</span></div>
-        {credit.rateCents && <div className="card stat"><small>Valor do crédito</small><strong>{fmtMoney(credit.rateCents)}</strong><span>por crédito, na recarga</span></div>}
+      <div className="delta-overview">
+        <div className="delta-overview-data"><span>Saldo em créditos</span><strong>{credit.balance}</strong></div>
+        {credit.canRecharge && credit.rateCents > 0 && <div>Recarga por Pix<br/><b>{fmtMoney(credit.rateCents)} por crédito</b></div>}
       </div>
       <p className="muted" style={{ marginBottom: 0 }}>Crédito é um saldo pré-pago usado só para comprar licenças. Ele não pode ser transferido, devolvido nem sacado.</p>
-      <Recharge credit={credit} onPaid={creditChanged} />
-      <BuyLicenses credit={credit} />
+      <div className="delta-credit-forms"><Recharge credit={credit} onPaid={creditChanged} />
+      <BuyLicenses credit={credit} /></div>
       <Ledger />
     </section>
   );

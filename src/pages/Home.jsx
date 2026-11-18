@@ -30,7 +30,7 @@ function Overdue({ go }) {
   return (
     <section className="panel">
       <div className="panel-head"><h3>Clientes para cobrar</h3><button className="btn sm" onClick={() => go("clientes")}>Ver todos</button></div>
-      {list.loading ? <p className="muted pad">Carregando…</p> : rows.length === 0 ? <p className="empty-ok"><Icon name="check" /> Nenhum cliente vencido.</p> : (
+      {list.error ? <p className="error pad">{list.error}</p> : list.loading ? <p className="muted pad">Carregando…</p> : rows.length === 0 ? <p className="empty-ok"><Icon name="check" /> Nenhum cliente vencido.</p> : (
         <ul className="plain">{rows.map((r) => {
           const wa = whatsapp(r.phone);
           return (
@@ -44,11 +44,11 @@ function Overdue({ go }) {
   );
 }
 
-function StockPanel({ go, balances, loaded }) {
+function StockPanel({ go, balances, loaded, error }) {
   return (
     <section className="panel">
       <div className="panel-head"><h3>Estoque de licenças</h3><button className="btn sm" onClick={() => go("estoque")}>Gerenciar</button></div>
-      {!loaded ? <p className="muted pad">Carregando…</p> : balances.length === 0 ? <p className="muted pad">Estoque vazio. Compre licenças em Estoque.</p> : (
+      {error ? <p className="error pad">{error}</p> : !loaded ? <p className="muted pad">Carregando…</p> : balances.length === 0 ? <p className="muted pad">Estoque vazio. Compre licenças em Estoque.</p> : (
         <ul className="plain">{balances.map((b) => <li key={b.months}><span>{monthsLabel(b.months)}</span><strong>{b.quantity}</strong></li>)}</ul>
       )}
     </section>
@@ -79,30 +79,18 @@ export default function Home({ go, menu }) {
 
   return (
     <>
-      <EasyStart role="reseller" reseller={isReseller} onNavigate={go} />
-      <div className="home-hero">
-        <div className="home-hero-text"><span className="home-hero-eyebrow"><Icon name="shield" size={14} /> CENTRAL DE OPERAÇÕES</span>
-          <h2>Resumo da sua operação</h2>
-          <p>Confira o que está acontecendo com suas TVs e seus clientes.</p>
-          {isReseller && <button className="btn primary" type="button" data-license-activation-entry="true" onClick={()=>go("ativar-tv")}>Ativar TV com licença</button>}
+      <section className="delta-overview" aria-label="Resumo da operação">
+        <div className="delta-overview-data">
+          <span><Icon name={isReseller ? "ticket" : "tv"} />{isReseller ? "Licenças em estoque" : "Dispositivos cadastrados"}</span>
+          <strong>{isReseller ? stock.data ? balances.reduce((total, item) => total + Number(item.quantity), 0) : "—" : me.deviceCount}</strong>
+          {isReseller && stock.error && <small>Estoque indisponível</small>}
         </div>
-        <div className="home-hero-actions"><button type="button" className="btn primary" onClick={() => go("dispositivos")}><Icon name="tv" size={16}/> Ver dispositivos</button><button type="button" className="btn" onClick={() => go("codigos")}><Icon name="key" size={16}/> Meus códigos</button></div>
-      </div>
-      <AllFunctions groups={menu} onNavigate={go} />
-      {isReseller && (
-        <section className="panel" aria-labelledby="network-dashboard-entry-heading" data-network-dashboard-entry="true">
-          <div className="panel-head">
-            <div>
-              <h3 id="network-dashboard-entry-heading">Gestão da rede de revendas</h3>
-              <p className="muted">Dashboard separado com menu próprio para revendas, convites, hierarquia, permissões, comissões e vendas de licenças.</p>
-            </div>
-            <button type="button" className="btn primary" onClick={() => go("rede")}>
-              <Icon name="users" size={16}/> Abrir dashboard da rede <Icon name="arrow-right" size={16}/>
-            </button>
-          </div>
-        </section>
-      )}
-
+        <div className="delta-actions">
+          {isReseller && <button className="btn primary" type="button" data-license-activation-entry="true" onClick={()=>go("ativar-tv")}><Icon name="key"/> Ativar TV com licença</button>}
+          <button className="btn" onClick={() => go("dispositivos")}><Icon name="tv"/> Ver dispositivos</button>
+          <button className="btn" onClick={() => go("codigos")}>Meus códigos</button>
+        </div>
+      </section>
       {isReseller && summary && (
         <div className={`attn ${attention.length ? "" : "ok"}`}>
           {attention.length ? <>
@@ -133,8 +121,24 @@ export default function Home({ go, menu }) {
         </div>
       </Section>
 
-      {isReseller && <div className="two-col"><Overdue go={go} /><StockPanel go={go} balances={balances} loaded={stockLoaded} /></div>}
+      {isReseller && <div className="two-col"><Overdue go={go} /><StockPanel go={go} balances={balances} loaded={stockLoaded} error={stock.error} /></div>}
 
+      {isReseller && (
+        <section className="panel" aria-labelledby="network-dashboard-entry-heading" data-network-dashboard-entry="true">
+          <div className="panel-head">
+            <div>
+              <h3 id="network-dashboard-entry-heading">Gestão da rede de revendas</h3>
+              <p className="muted">Dashboard separado com menu próprio para revendas, convites, hierarquia, permissões, comissões e vendas de licenças.</p>
+            </div>
+            <button type="button" className="btn primary" onClick={() => go("rede")}>
+              <Icon name="users" size={16}/> Abrir dashboard da rede <Icon name="arrow-right" size={16}/>
+            </button>
+          </div>
+        </section>
+      )}
+
+      <EasyStart role="reseller" reseller={isReseller} onNavigate={go} />
+      <AllFunctions groups={menu} onNavigate={go} />
       <section className="panel">
         <div className="panel-head"><h3>Sua {what}</h3><Badge status={me.effectiveStatus} /></div>
         <dl className="kv pad"><dt>Vigência até</dt><dd>{fmtDate(me.endsAt)}</dd><dt>Mensalidade vence</dt><dd>dia {me.dueDay} (tolerância de {me.graceDays} dia(s))</dd></dl>

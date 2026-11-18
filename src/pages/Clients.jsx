@@ -1,3 +1,4 @@
+import { useBulkRemoval } from "../../shared/useBulkRemoval.jsx";
 import ValidatedInput from "../../shared/ValidatedInput.jsx";
 import WizardProgress from "@deltatv/ui/WizardProgress";
 import { useTaskIntent } from "@deltatv/ui/task-intent";
@@ -82,6 +83,12 @@ export default function Clients() {
     if (await run(() => api(`/partner/clients/${r.clientId}`, { method: "DELETE" }), "Cliente excluído.")) refresh();
   };
 
+  const bulk = useBulkRemoval({
+    Modal, rows: list.data, scope: JSON.stringify(list.params), loading: list.loading,
+    id: r => r.clientId, label: r => [r.name, r.mac].filter(Boolean).join(" · "), eligible: r => !!r.clientId,
+    description: "Os dados cadastrais serão apagados. As TVs e licenças continuam vinculadas.",
+    remove: r => api(`/partner/clients/${r.clientId}`, { method: "DELETE" }), refresh,
+  });
   const s = summary.data;
   return (
     <section>
@@ -101,13 +108,14 @@ export default function Clients() {
           {FILTERS.map(([k, n]) => <option key={k} value={k}>{n}</option>)}
         </select>
       </div>
+      {bulk.toolbar}
       <Table>
         <thead><tr><th>Cliente</th><th>MAC</th><th>Valor</th><th>Vencimento</th><th>TV</th><th /></tr></thead>
         <tbody>{list.data.map((r) => {
           const wa = whatsapp(r.phone);
           return (
             <tr key={r.mac}>
-              <td>
+              <td>{bulk.checkbox(r)}
                 {r.clientId ? <strong>{r.name}</strong> : <span className="muted">Sem cadastro</span>}
                 {r.phone && <div style={{ fontSize: 12 }}>{wa ? <a href={wa} target="_blank" rel="noopener noreferrer" title="Abrir conversa no WhatsApp">{r.phone}</a> : r.phone}</div>}
                 {r.address && <div className="muted" style={{ fontSize: 12 }}>{r.address}</div>}

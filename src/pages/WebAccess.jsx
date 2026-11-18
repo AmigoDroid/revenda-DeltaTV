@@ -1,3 +1,4 @@
+import { useBulkRemoval } from "../../shared/useBulkRemoval.jsx";
 import { useEffect, useState } from "react";
 import { api } from "../api.js";
 import { useBalances, monthsLabel } from "./CodeModal.jsx";
@@ -206,6 +207,12 @@ export default function WebAccess({ admin = false }) {
   const [modesFor, setModesFor] = useState(null);
   useEffect(() => { list.filter({ q: dq }); /* eslint-disable-next-line */ }, [dq]);
 
+  const bulk = useBulkRemoval({
+    Modal, rows: list.data, scope: JSON.stringify(list.params), loading: list.loading,
+    id: a => a.id, label: a => fmtCode(a.code), eligible: a => a.status !== "revoked",
+    description: "Os códigos selecionados deixarão de liberar o acesso ao Player Web.",
+    remove: a => api(`${base}/${a.id}/revoke`, { method: "POST", body: {} }), refresh: list.reload,
+  });
   const act = async (a, action, o, body = {}) => {
     const c = o ? await confirm(o) : {};
     if (c && (await run(() => api(`${base}/${a.id}/${action}`, { method: "POST", body: { ...body, reason: c.reason } }), "Atualizado."))) list.reload();
@@ -228,12 +235,13 @@ export default function WebAccess({ admin = false }) {
           <option value="">Todos</option><option value="active">Ativos</option><option value="blocked">Bloqueados</option><option value="revoked">Removidos</option>
         </select>
       </div>
+      {bulk.toolbar}
       <Table><thead><tr><th>Código</th><th>Cliente</th>{admin && <th>Revendedor</th>}<th>Lista</th><th>Vence em</th><th>Status</th><th>Último acesso</th><th>Entrega</th><th /></tr></thead><tbody>{list.data.map((a) => {
         const denied = a.status === "active" && a.access && !a.access.allowed;
         const m = a.deliveryModes;
         return (
           <tr key={a.id}>
-            <td><strong className="mono">{fmtCode(a.code)}</strong></td>
+            <td>{bulk.checkbox(a)}<strong className="mono">{fmtCode(a.code)}</strong></td>
             <td>{a.label || <span className="muted">—</span>}</td>
             {admin && <td>{a.partner?.name || <span className="muted">Admin</span>}</td>}
             <td>{a.listName || a.provider?.name || <span className="muted">{a.configured ? "—" : "sem lista"}</span>}</td>

@@ -1,0 +1,64 @@
+/* Superfícies operacionais da revenda. Os controles herdam as cores do tema ativo. */
+.delta-overview {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 22px;
+  margin-bottom: 20px;
+  padding: clamp(22px, 4vw, 40px);
+  border: 1px solid #65588e;
+  border-radius: 22px;
+  color: #faf8ff;
+  background: linear-gradient(112deg, #211736, #38275e 60%, #39346a);
+}
+.delta-overview::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0 -5% 0 30%;
+  transform: skewX(-26deg);
+  background: repeating-linear-gradient(90deg, transparent 0 38px, #d0c2ff12 39px 40px);
+}
+.delta-overview-data { display: grid; gap: 10px; }
+.delta-overview-data span, .delta-actions { display: flex; align-items: center; gap: 9px; }
+.delta-overview-data span { font-weight: 650; color: #e0d5ff; }
+.delta-overview-data strong { color: white; font-size: clamp(46px, 6vw, 72px); letter-spacing: -.055em; line-height: 1; }
+.delta-actions { flex-wrap: wrap; }
+.delta-actions .btn { display: inline-flex; align-items: center; gap: 8px; min-height: 42px; }
+.delta-overview .btn.primary { background: #e9dfff; border-color: #e9dfff; color: #31204d; }
+.delta-downloads { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 310px), 1fr)); gap: 16px; align-items: start; }
+.delta-download, .delta-filterbar, .delta-empty {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 20px;
+}
+.delta-download { display: grid; gap: 18px; min-width: 0; overflow-wrap: anywhere; }
+.delta-download header, .delta-code { display: flex; align-items: center; gap: 12px; }
+.delta-glyph { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: 14px; background: var(--brand-soft); color: var(--brand-hi); }
+.delta-download h3 { margin: 4px 0 0; font-size: 19px; }
+.delta-download small { color: var(--muted); }
+.delta-code { justify-content: space-between; flex-wrap: wrap; padding: 14px; border-radius: 12px; background: var(--panel2); }
+.delta-code strong { display: block; margin-top: 3px; font: bold 24px ui-monospace, monospace; letter-spacing: .06em; }
+.delta-download details { border-top: 1px solid var(--line); padding-top: 10px; }
+.delta-download summary { cursor: pointer; color: var(--brand-hi); padding: 8px 0; }
+.delta-download details p { white-space: pre-line; user-select: text; }
+.delta-filterbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+.delta-filterbar h3 { flex-basis: 100%; margin: 0 0 4px; }
+.delta-filterbar input { flex: 2 1 190px; }
+.delta-filterbar select { flex: 1 1 140px; }
+.delta-filterbar :is(input,select) { min-width: 0; min-height: 44px; }
+.delta-empty { display: grid; justify-items: center; gap: 14px; padding: 28px; text-align: center; }
+.layout .sidebar .nav.active { box-shadow: inset 3px 0 var(--brand-hi); }
+@media (max-width: 700px) {
+  .delta-overview, .delta-download, .delta-filterbar { padding: 17px; }
+  .delta-filterbar input { flex-basis: 100%; }
+  .delta-filterbar select { flex-basis: 115px; }
+  .delta-overview .delta-actions { gap: 8px; }
+  .delta-overview .btn.primary { justify-content: center; flex-basis: 100%; }
+  .delta-overview .delta-actions .btn { flex-grow: 1; }
+}
+.delta-credit-forms { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+.delta-transfer-review { display: grid; gap: 6px; margin: 14px 0; padding: 14px; border-inline-start: 3px solid var(--brand-hi); background: var(--panel2); }
+.delta-transfer-review strong { font-family: ui-monospace, monospace; }

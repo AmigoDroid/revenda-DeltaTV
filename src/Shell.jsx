@@ -190,7 +190,6 @@ function Layout({ user }) {
           <button className="icon sidebar-close" type="button" aria-label="Fechar menu" onClick={() => setOpen(false)}><Icon name="x" size={20}/></button>
         </div>
         
-        <div className="sidebar-context"><span className="sidebar-context-dot" /> <span>Área de trabalho</span><span className="sidebar-context-mark">Revenda</span></div>
         <nav aria-label="Principal">
           {blocked ? <div className="nav-group" aria-label="Conta com acesso restrito">
             {items.map(n => <button type="button" className={`nav ${route === n.id ? 'active' : ''}`} key={n.id} onClick={() => go(n.id)}><Icon name={n.icon}/><span>{n.label}</span></button>)}
@@ -209,7 +208,7 @@ function Layout({ user }) {
           <button type="button" className="icon menu-btn" aria-label="Abrir menu" aria-expanded={open} onClick={() => setOpen(true)}><Icon name="menu" size={22} /></button>
           <div className="topbar-context"><span className="topbar-eyebrow">PAINEL DA REVENDA</span><strong className="topbar-title">{cur.label}</strong></div>
           <div className="topbar-tools">
-            {!blocked && <button className="btn primary sm" type="button" onClick={()=>{go("ativar-tv");}}>Ativar TV</button>}
+            {!blocked && isReseller && <button className="btn primary sm" type="button" onClick={()=>{go("ativar-tv");}}>Ativar TV</button>}
             
             <button type="button" className="btn sm" data-help-target="context-help" onClick={() => window.dispatchEvent(new CustomEvent("deltatv-help-context", { detail: { screen: cur.id } }))}>? Ajuda</button>
             {!blocked && <button type="button" className="topbar-notify" aria-label={notificationCount > 0 ? `${notificationCount} notificações não lidas` : "Abrir notificações"} title="Notificações" onClick={() => go("notificacoes")}>
@@ -227,7 +226,7 @@ function Layout({ user }) {
         <main className="content"><Breadcrumb panel="revenda" current={cur.label} onHome={()=>go("inicio")}/>
           <TaskFinder tasks={TASKS.filter(task=>centerAllowed(task.route))} onNavigate={go} />
           <header className="page-title">
-            <div className="page-title-copy"><span className="page-eyebrow">DELTA TV <span>/</span> {cur.label.toUpperCase()}</span><h1>{title}</h1>{cur.desc && <p className="muted">{cur.desc}</p>}</div>
+            <div className="page-title-copy"><h1>{title}</h1>{cur.desc && <p className="muted">{cur.desc}</p>}</div>
           </header>
           {simpleMode && cur.id !== "inicio" && <EasyPageGuide role="reseller" page={cur.id} onBack={() => go("inicio")} />}
           <HelpExperience screen={cur.id} portal="reseller" userId={user.id} onNavigate={go}/>

@@ -1,3 +1,5 @@
+import { useBulkRemoval } from "../../shared/useBulkRemoval.jsx";
+import { Modal } from "../ui.jsx";
 import { useEffect, useState } from "react";
 import { api } from "../api.js";
 import { usePortal } from "../portal.jsx";
@@ -16,7 +18,7 @@ export default function Devices({ go }) {
   const run = useAction();
   const [q, setQ] = useState("");
   const dq = useDebounced(q);
-  const devices = useList("/partner/devices", { q: "", online: "" });
+  const devices = useList("/partner/devices", { q: "", online: "", status: "" });
   const [transfer, setTransfer] = useState(null); // ativação cuja licença vai para outro MAC
   const [viewMac, setViewMac] = useState(null); // MAC cujas listas estão abertas
   useEffect(() => { devices.filter({ q: dq }); /* eslint-disable-next-line */ }, [dq]);
@@ -29,6 +31,14 @@ export default function Devices({ go }) {
     return () => clearInterval(t);
   }, [busy, devices.reload, devices.loading]);
 
+  const bulk = useBulkRemoval({
+    Modal, rows: devices.data, scope: JSON.stringify(devices.params), loading: devices.loading,
+    id: a => a.id, label: a => a.mac || a.id,
+    eligible: a => a.status !== "revoked" && !(a.grantedLicense?.status === "active" && a.grantedLicense.remainingDays > 0),
+    description: "As ativações selecionadas serão removidas desta revenda e suas sessões serão encerradas.",
+    remove: a => api(`/partner/devices/${a.id}/revoke`, { method: "POST", body: {} }),
+    refresh: devices.reload,
+  });
   const change = async (a, action, o) => {
     const c = await confirm(o);
     if (c && (await run(() => api(`/partner/devices/${a.id}/${action}`, { method: "POST", body: { reason: c.reason } }), "Atualizado."))) devices.reload();
@@ -40,18 +50,22 @@ export default function Devices({ go }) {
         go('ativar-tv');
       }}/>}
       <section>
-        <div className="section-head">
+        <div className="delta-filterbar">
           <h3>{isReseller ? "Ativações" : "Meus dispositivos"}</h3>
-          <input data-help-target="search-device" placeholder="Pesquisar por MAC" aria-label="Pesquisar por MAC" value={q} onChange={(e) => setQ(e.target.value)} />
+          <input maxLength={40} type="search" data-help-target="search-device" placeholder="Pesquisar por MAC" aria-label="Pesquisar por MAC" value={q} onChange={(e) => setQ(e.target.value)} />
           <select value={devices.params.online} onChange={(e) => devices.filter({ online: e.target.value })} aria-label="Conexão">
             <option value="">Online e offline</option><option value="true">Só online</option><option value="false">Só offline</option>
           </select>
+          <select aria-label="Status da ativação" value={devices.params.status} onChange={e => devices.filter({ status: e.target.value })}>
+            <option value="">Todos os status</option><option value="active">Ativa</option><option value="blocked">Bloqueada</option><option value="revoked">Removida</option>
+          </select>
         </div>
-        <div className="device-list"><Table><thead><tr><th>MAC</th><th>Tipo</th><th>Conexão</th><th>Assistindo / IP</th><th>Status</th><th>Licença vence em</th><th>Ativado em</th><th /><th className="mobile-details-header">Informações</th></tr></thead><tbody>{devices.data.map((a) => {
+        {bulk.toolbar}
+      <div className="device-list"><Table><thead><tr><th>MAC</th><th>Tipo</th><th>Conexão</th><th>Assistindo / IP</th><th>Status</th><th>Licença vence em</th><th>Ativado em</th><th /><th className="mobile-details-header">Informações</th></tr></thead><tbody>{devices.data.map((a) => {
           const lic = a.grantedLicense;
           const live = !!lic && lic.status === "active" && lic.remainingDays > 0;
           return (
-            <tr key={a.id}><td className="mono">{a.mac || "—"}</td><td><PlatformBadge platform={a.platform} /></td><td><OnlineBadge online={a.online} lastSeenAt={a.lastSeenAt} /></td><td><strong>{a.live?.playback?.title || '—'}</strong><div className="muted">{a.live?.online ? `IP: ${a.live.ip || 'indisponível'}` : 'Sem telemetria'}</div></td><td><Badge status={accessStatus(a)} /></td>
+            <tr key={a.id}><td className="mono">{bulk.checkbox(a)}{a.mac || "—"}</td><td><PlatformBadge platform={a.platform} /></td><td><OnlineBadge online={a.online} lastSeenAt={a.lastSeenAt} /></td><td><strong>{a.live?.playback?.title || '—'}</strong><div className="muted">{a.live?.online ? `IP: ${a.live.ip || 'indisponível'}` : 'Sem telemetria'}</div></td><td><Badge status={accessStatus(a)} /></td>
               <td>{lic ? <>{fmtDate(lic.expiresAt)} <span className="muted">({live ? `${lic.remainingDays} dia(s)` : lic.status === "active" ? "vencida" : lic.status})</span></> : "—"}</td>
               <td>{fmtDateTime(a.activatedAt)}</td><td className="actions">
                 <RowMenu items={[
@@ -70,7 +84,11 @@ export default function Devices({ go }) {
                 <div>Ativada em: {fmtDateTime(a.activatedAt)}</div>
               </details></td></tr>);
         })}</tbody></Table></div>
-        <Empty loading={devices.loading} error={devices.error} count={devices.data.length} /><Pager meta={devices.meta} onPage={devices.setPage} />
+        {devices.loading || devices.error || devices.data.length ? <Empty loading={devices.loading} error={devices.error} count={devices.data.length} /> :
+          <div className="delta-empty"><strong>{dq || devices.params.status || devices.params.online ? "Nenhuma TV corresponde aos filtros" : "Nenhuma ativação cadastrada"}</strong>
+            {(q || devices.params.online || devices.params.status) ? <button className="btn" onClick={() => { setQ(""); devices.filter({ q: "", online: "", status: "" }); }}>Limpar filtros</button> :
+              isReseller && <button className="btn primary" onClick={() => go("ativar-tv")}>Ativar primeira TV</button>}
+          </div>}<Pager meta={devices.meta} onPage={devices.setPage} />
       </section>
       {webFor && <NewWebAccess initial={{ mac: webFor.mac }} onClose={() => setWebFor(null)} />}
       {viewMac && <DeviceListsModal mac={viewMac} onClose={() => setViewMac(null)} />}
