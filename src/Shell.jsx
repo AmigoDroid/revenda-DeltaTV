@@ -1,5 +1,5 @@
 import AdminPortalAccounts from "@deltatv/ui/AdminPortalAccounts";
-import { Breadcrumb, PlatformBrand } from "../shared/PanelExperience.jsx";
+import {Breadcrumb,PlatformBrand} from "../shared/PanelExperience.jsx";
 import TvMessages from "./TvMessages.jsx";
 import TaskFinder from "@deltatv/ui/TaskFinder";
 import { TASKS } from "./task-directory.js";
@@ -36,234 +36,46 @@ import HelpExperience from "./HelpExperience.jsx";
 
 // Cada item vira uma página. `reseller`: só aparece para quem revende licenças.
 const NAV = [
-  {
-    id: "tvmessages",
-    label: "Mensagens para TVs",
-    icon: "bell",
-    page: TvMessages,
-    desc: "Envie comunicados aos aparelhos dos seus clientes.",
-  },
-  {
-    id: "inicio",
-    label: "Início",
-    icon: "home",
-    page: Home,
-    desc: "O que precisa da sua atenção hoje.",
-  },
-  {
-    id: "suporte",
-    label: "Resolver problema da TV",
-    icon: "help",
-    page: SupportCenter,
-    desc: "Diagnostique um cliente sem interpretar logs ou códigos técnicos.",
-  },
-  {
-    id: "ativar-tv",
-    label: "Ativar TV",
-    icon: "key",
-    page: LicenseActivation,
-    reseller: true,
-    desc: "Ative a TV informando o MAC e aplicando uma licença. Emissão direta só para Master autorizado.",
-  },
-  {
-    id: "clientes",
-    label: "Clientes",
-    icon: "users",
-    page: Clients,
-    reseller: true,
-    desc: "Cadastre pessoas sem MAC, gerencie planos com várias TVs e consulte os cadastros antigos na mesma área.",
-  },
-  {
-    id: "dispositivos",
-    label: "Dispositivos",
-    icon: "tv",
-    page: Devices,
-    desc: "Busque uma TV pelo MAC, edite as listas dela e gerencie as ativações.",
-  },
-  {
-    id: "vender-licencas",
-    label: "Vender / comprar licenças",
-    icon: "ticket",
-    page: LicenseTrading,
-    reseller: true,
-    desc: "O Master vende licenças por Pix ou créditos e pode entregar diretamente à sua rede.",
-  },
-  {
-    id: "rede",
-    label: "Gestão da rede",
-    icon: "users",
-    page: Network,
-    reseller: true,
-    desc: "Abra o dashboard exclusivo para suas revendas, convites, hierarquia, comissões e vendas.",
-  },
-  {
-    id: "estoque",
-    label: "Estoque",
-    icon: "box",
-    page: StockPortal,
-    reseller: true,
-    desc: "Licenças disponíveis. Aplique ao MAC de um cliente (em Dispositivos) ou transfira para outro revendedor.",
-  },
-  {
-    id: "creditos",
-    label: "Crédito",
-    icon: "coin",
-    page: Credits,
-    reseller: true,
-    desc: "Saldo pré-pago para comprar licenças. Recarregue por Pix e troque por licenças no estoque.",
-  },
-  {
-    id: "licencas",
-    label: "Licenças",
-    icon: "ticket",
-    page: Licenses,
-    reseller: true,
-    desc: "As licenças do seu estoque em uso: veja o prazo de cada uma, renove, suspenda ou reative.",
-  },
-  {
-    id: "codigos",
-    label: "Códigos",
-    icon: "key",
-    page: Codes,
-    desc: "Códigos que o cliente digita na TV para ativar.",
-  },
-  {
-    id: "playerweb",
-    label: "Player Web",
-    icon: "tv",
-    page: WebAccess,
-    reseller: true,
-    desc: "Códigos (2 letras + 6 números) para o cliente assistir no navegador, com licença e entrega próprias.",
-  },
-  {
-    id: "white-label",
-    label: "Meus aplicativos",
-    icon: "download",
-    page: WhiteLabelApps,
-    desc: "Aplicativos contratados, servidores e limites de ativação.",
-  },
-  {
-    id: "aplicativos",
-    label: "Downloads e links",
-    icon: "download",
-    page: Downloads,
-    reseller: true,
-    desc: "Aplicativos para baixar e links úteis: copie o link ou o código do Downloader para passar ao seu cliente.",
-  },
-  {
-    id: "servidores",
-    label: "Fontes de conteúdo",
-    icon: "server",
-    page: Servers,
-    desc: "Links e qualidade HTTP na mesma área.",
-  },
-  {
-    id: "monitoramento",
-    label: "Monitoramento",
-    icon: "server",
-    page: ServerMonitor,
-    desc: "Acompanhe a disponibilidade e o tempo de resposta dos seus servidores.",
-  },
-  {
-    id: "notificacoes",
-    label: "Notificações",
-    icon: "bell",
-    page: Notifications,
-    desc: "Avisos e comunicados da Delta TV.",
-  },
-  {
-    id: "loginhistory",
-    label: "Histórico de login",
-    icon: "history",
-    page: LoginHistory,
-    desc: "Veja seus acessos, IPs e dispositivos.",
-  },
-  {
-    id: "financeiro",
-    label: "Financeiro",
-    icon: "wallet",
-    page: Billing,
-    desc: "Mensalidades da parceria e pagamentos por Pix.",
-  },
-  {
-    id: "pix-master",
-    label: "Pix da minha rede",
-    icon: "wallet",
-    page: FinanceiroMaster,
-    reseller: true,
-    desc: "Vendas, compras Pix e recebimentos de licenças dos Masters.",
-  },
-  {
-    id: "conta",
-    label: "Minha conta",
-    icon: "user",
-    page: ProfilePage,
-    desc: "Dados pessoais, segurança, sessões, histórico e notificações.",
-  },
-  {
-    id: "ajuda",
-    label: "Central de Ajuda",
-    icon: "help",
-    page: null,
-    desc: "Guias e tutoriais interativos do painel.",
-  },
+  {id:"tvmessages",label:"Mensagens para TVs",icon:"bell",page:TvMessages,desc:"Envie comunicados aos aparelhos dos seus clientes."},
+  { id: "inicio", label: "Início", icon: "home", page: Home, desc: "O que precisa da sua atenção hoje." },
+  { id: "suporte", label: "Resolver problema da TV", icon: "help", page: SupportCenter, desc: "Diagnostique um cliente sem interpretar logs ou códigos técnicos." },
+  { id: "ativar-tv", label: "Ativar TV", icon: "key", page: LicenseActivation, reseller: true, desc: "Ative a TV informando o MAC e aplicando uma licença. Emissão direta só para Master autorizado." },
+  { id: "clientes", label: "Clientes", icon: "users", page: Clients, reseller: true, desc: "Cadastre pessoas sem MAC, gerencie planos com várias TVs e consulte os cadastros antigos na mesma área." },
+  { id: "dispositivos", label: "Dispositivos", icon: "tv", page: Devices, desc: "Busque uma TV pelo MAC, edite as listas dela e gerencie as ativações." },
+  { id: "vender-licencas", label: "Vender / comprar licenças", icon: "ticket", page: LicenseTrading, reseller: true, desc: "O Master vende licenças por Pix ou créditos e pode entregar diretamente à sua rede." },
+  { id: "rede", label: "Gestão da rede", icon: "users", page: Network, reseller: true, desc: "Abra o dashboard exclusivo para suas revendas, convites, hierarquia, comissões e vendas." },
+  { id: "estoque", label: "Estoque", icon: "box", page: StockPortal, reseller: true, desc: "Licenças disponíveis. Aplique ao MAC de um cliente (em Dispositivos) ou transfira para outro revendedor." },
+  { id: "creditos", label: "Crédito", icon: "coin", page: Credits, reseller: true, desc: "Saldo pré-pago para comprar licenças. Recarregue por Pix e troque por licenças no estoque." },
+  { id: "licencas", label: "Licenças", icon: "ticket", page: Licenses, reseller: true, desc: "As licenças do seu estoque em uso: veja o prazo de cada uma, renove, suspenda ou reative." },
+  { id: "codigos", label: "Códigos", icon: "key", page: Codes, desc: "Códigos que o cliente digita na TV para ativar." },
+  { id: "playerweb", label: "Player Web", icon: "tv", page: WebAccess, reseller: true, desc: "Códigos (2 letras + 6 números) para o cliente assistir no navegador, com licença e entrega próprias." },
+  { id: "white-label", label: "Meus aplicativos", icon: "download", page: WhiteLabelApps, desc: "Aplicativos contratados, servidores e limites de ativação." },
+  { id: "aplicativos", label: "Downloads e links", icon: "download", page: Downloads, reseller: true, desc: "Aplicativos para baixar e links úteis: copie o link ou o código do Downloader para passar ao seu cliente." },
+  { id: "servidores", label: "Fontes de conteúdo", icon: "server", page: Servers, desc: "Links e qualidade HTTP na mesma área." },
+  { id: "monitoramento", label: "Monitoramento", icon: "server", page: ServerMonitor, desc: "Acompanhe a disponibilidade e o tempo de resposta dos seus servidores." },
+  { id: "notificacoes", label: "Notificações", icon: "bell", page: Notifications, desc: "Avisos e comunicados da Delta TV." },
+  { id: "loginhistory", label: "Histórico de login", icon: "history", page: LoginHistory, desc: "Veja seus acessos, IPs e dispositivos." },
+  { id: "financeiro", label: "Financeiro", icon: "wallet", page: Billing, desc: "Mensalidades da parceria e pagamentos por Pix." },
+  { id: "pix-master", label: "Pix da minha rede", icon: "wallet", page: FinanceiroMaster, reseller: true, desc: "Vendas, compras Pix e recebimentos de licenças dos Masters." },
+  { id: "conta", label: "Minha conta", icon: "user", page: ProfilePage, desc: "Dados pessoais, segurança, sessões, histórico e notificações." },
+  { id: "ajuda", label: "Central de Ajuda", icon: "help", page: null, desc: "Guias e tutoriais interativos do painel." },
 ];
 // Menu único e direto (como no painel do parceiro): cada função abre a própria página,
 // sem passar por sub-dashboards. A mesma lista alimenta o menu lateral e a tela inicial.
 const GROUPS = [
-  { label: null, ids: ["inicio"] },
-  {
-    label: "Acesso rápido",
-    ids: ["ativar-tv", "clientes", "dispositivos", "rede"],
-  },
-  { label: "Atendimento", ids: ["suporte", "tvmessages"] },
-  {
-    label: "Licenças e financeiro",
-    ids: [
-      "vender-licencas",
-      "estoque",
-      "creditos",
-      "licencas",
-      "financeiro",
-      "pix-master",
-    ],
-  },
-  {
-    label: "Aplicativos e servidores",
-    ids: [
-      "codigos",
-      "playerweb",
-      "servidores",
-      "monitoramento",
-      "white-label",
-      "aplicativos",
-    ],
-  },
-  {
-    label: "Conta e suporte",
-    ids: ["conta", "notificacoes", "loginhistory", "ajuda"],
-  },
+  {label:null,ids:['inicio']},
+  {label:'Acesso rápido',ids:['ativar-tv','clientes','dispositivos','rede']},
+  {label:'Atendimento',ids:['suporte','tvmessages']},
+  {label:'Licenças e financeiro',ids:['vender-licencas','estoque','creditos','licencas','financeiro','pix-master']},
+  {label:'Aplicativos e servidores',ids:['codigos','playerweb','servidores','monitoramento','white-label','aplicativos']},
+  {label:'Conta e suporte',ids:['conta','notificacoes','loginhistory','ajuda']},
 ];
 const ACCOUNT = [
-  {
-    id: "conta",
-    label: "Minha conta",
-    icon: "user",
-    page: ProfilePage,
-    desc: "Seu perfil e a segurança da conta.",
-  },
-  {
-    id: "ajuda",
-    label: "Central de Ajuda",
-    icon: "help",
-    page: null,
-    desc: "Tutoriais de ajuda.",
-  },
+  { id: "conta", label: "Minha conta", icon: "user", page: ProfilePage, desc: "Seu perfil e a segurança da conta." },
+  { id: "ajuda", label: "Central de Ajuda", icon: "help", page: null, desc: "Tutoriais de ajuda." },
 ];
 const readRoute = () => {
-  const value = location.hash.startsWith("#/")
-    ? location.hash.slice(2)
-    : "inicio";
+  const value = location.hash.startsWith("#/") ? location.hash.slice(2) : "inicio";
   // Endereços antigos de sub-dashboards (#/area/..., #/central-...) abrem direto a função correspondente.
   return resolveLegacyRoute(value);
 };
@@ -274,13 +86,8 @@ function UserMenu({ user, name, avatar, onAccount }) {
   const ref = useRef(null);
   useEffect(() => {
     if (!expanded) return;
-    const closeOutside = (event) => {
-      if (ref.current && !ref.current.contains(event.target))
-        setExpanded(false);
-    };
-    const closeEscape = (event) => {
-      if (event.key === "Escape") setExpanded(false);
-    };
+    const closeOutside = (event) => { if (ref.current && !ref.current.contains(event.target)) setExpanded(false); };
+    const closeEscape = (event) => { if (event.key === "Escape") setExpanded(false); };
     document.addEventListener("pointerdown", closeOutside);
     document.addEventListener("keydown", closeEscape);
     return () => {
@@ -292,63 +99,16 @@ function UserMenu({ user, name, avatar, onAccount }) {
   const initial = String(displayName).trim().charAt(0).toUpperCase();
   return (
     <div className="usermenu" ref={ref}>
-      <button
-        type="button"
-        className="usermenu-btn"
-        aria-label={`Perfil: ${displayName}`}
-        aria-haspopup="menu"
-        aria-expanded={expanded}
-        onClick={() => setExpanded((value) => !value)}
-      >
-        <span className="avatar" aria-hidden="true">
-          {avatar ? (
-            <img src={avatar} alt="" className="profile-menu-avatar" />
-          ) : (
-            initial
-          )}
-        </span>
+      <button type="button" className="usermenu-btn" aria-label={`Perfil: ${displayName}`} aria-haspopup="menu" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>
+        <span className="avatar" aria-hidden="true">{avatar ? <img src={avatar} alt="" className="profile-menu-avatar"/> : initial}</span>
         <span className="usermenu-name">{displayName}</span>
-        <svg
-          viewBox="0 0 24 24"
-          width="16"
-          height="16"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M6 9l6 6 6-6" />
-        </svg>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
       </button>
-      {expanded && (
-        <div className="usermenu-pop" role="menu">
-          <div className="who">
-            <strong>{displayName}</strong>
-            <span>{user.email}</span>
-          </div>
-          <button
-            type="button"
-            className="btn sm"
-            role="menuitem"
-            onClick={() => {
-              setExpanded(false);
-              onAccount();
-            }}
-          >
-            <Icon name="user" /> Minha conta
-          </button>
-          <button
-            type="button"
-            className="btn sm"
-            role="menuitem"
-            onClick={logout}
-          >
-            <Icon name="logout" /> Sair da conta
-          </button>
-        </div>
-      )}
+      {expanded && <div className="usermenu-pop" role="menu">
+        <div className="who"><strong>{displayName}</strong><span>{user.email}</span></div>
+        <button type="button" className="btn sm" role="menuitem" onClick={() => { setExpanded(false); onAccount(); }}><Icon name="user" /> Minha conta</button>
+        <button type="button" className="btn sm" role="menuitem" onClick={logout}><Icon name="logout" /> Sair da conta</button>
+      </div>}
     </div>
   );
 }
@@ -359,27 +119,15 @@ function Layout({ user }) {
   const [open, setOpen] = useState(false);
   const [simpleMode, setSimpleMode] = useSimpleMode("revenda");
   // Permite que o tour mostre as opções que ficam na gaveta de navegação móvel.
-  useEffect(() => {
-    const openForHelp = () => setOpen(true);
-    window.addEventListener("deltatv-help-open-menu", openForHelp);
-    return () =>
-      window.removeEventListener("deltatv-help-open-menu", openForHelp);
-  }, []);
+  useEffect(() => { const openForHelp = () => setOpen(true); window.addEventListener("deltatv-help-open-menu", openForHelp); return () => window.removeEventListener("deltatv-help-open-menu", openForHelp); }, []);
   const [notificationCount, setNotificationCount] = useState(0);
   const [profileDetails, setProfileDetails] = useState(null);
   useEffect(() => {
     let live = true;
-    api("/auth/profile")
-      .then((data) => {
-        if (live) setProfileDetails(data);
-      })
-      .catch(() => {});
-    const changed = (event) => setProfileDetails(event.detail);
+    api("/auth/profile").then(data => { if (live) setProfileDetails(data); }).catch(() => {});
+    const changed = event => setProfileDetails(event.detail);
     window.addEventListener("profile-updated", changed);
-    return () => {
-      live = false;
-      window.removeEventListener("profile-updated", changed);
-    };
+    return () => { live = false; window.removeEventListener("profile-updated", changed); };
   }, [user.id]);
   const showBadge = profileDetails?.profile?.showNotificationBadge !== false;
   const showUnread = profileDetails?.profile?.showUnreadBanner !== false;
@@ -388,41 +136,17 @@ function Layout({ user }) {
     if (!open) return undefined;
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    const onEscape = (event) => {
-      if (event.key === "Escape") setOpen(false);
-    };
+    const onEscape = (event) => { if (event.key === "Escape") setOpen(false); };
     document.addEventListener("keydown", onEscape);
-    return () => {
-      document.body.style.overflow = previous;
-      document.removeEventListener("keydown", onEscape);
-    };
+    return () => { document.body.style.overflow = previous; document.removeEventListener("keydown", onEscape); };
   }, [open]);
   useEffect(() => {
     let active = true;
-    const refresh = () =>
-      api("/partner/notifications", { query: { limit: 1 } })
-        .then((v) => {
-          if (active) setNotificationCount(v.unread || 0);
-        })
-        .catch(() => {});
+    const refresh = () => api("/partner/notifications", { query: { limit: 1 } }).then(v => { if (active) setNotificationCount(v.unread || 0); }).catch(() => {});
     refresh();
-    const event = (e) => {
-      if (
-        e.type === "notification-updated" ||
-        e.type === "realtime-ready" ||
-        e.detail?.type === "notification"
-      )
-        refresh();
-    };
-    window.addEventListener("realtime-change", event);
-    window.addEventListener("realtime-ready", event);
-    window.addEventListener("notification-updated", event);
-    return () => {
-      active = false;
-      window.removeEventListener("realtime-change", event);
-      window.removeEventListener("realtime-ready", event);
-      window.removeEventListener("notification-updated", event);
-    };
+    const event = (e) => { if (e.type === "notification-updated" || e.type === "realtime-ready" || e.detail?.type === "notification") refresh(); };
+    window.addEventListener("realtime-change", event); window.addEventListener("realtime-ready", event); window.addEventListener("notification-updated", event);
+    return () => { active = false; window.removeEventListener("realtime-change", event); window.removeEventListener("realtime-ready", event); window.removeEventListener("notification-updated", event); };
   }, []);
   useEffect(() => {
     const h = () => setRoute(readRoute());
@@ -430,281 +154,85 @@ function Layout({ user }) {
     return () => window.removeEventListener("hashchange", h);
   }, []);
   const blocked = !!me && me.effectiveStatus !== "active"; // cadastro em análise, suspenso ou vencido: só o aviso
-  const items = blocked
-    ? ACCOUNT
-    : NAV.filter((n) => !n.reseller || isReseller);
+  const items = blocked ? ACCOUNT : NAV.filter((n) => !n.reseller || isReseller);
   const cur = items.find((n) => n.id === route) || items[0];
-  const go = useCallback((id) => {
-    location.hash = `/${id}`;
-    setOpen(false);
-    window.scrollTo(0, 0);
-  }, []);
+  const go = useCallback((id) => { location.hash = `/${id}`; setOpen(false); window.scrollTo(0, 0); }, []);
   const Page = cur.page;
-  const centerAllowed = (id) =>
-    items.some(
-      (item) =>
-        item.id === id || (id.startsWith("rede/") && item.id === "rede"),
-    );
-  const title =
-    cur.id === "inicio"
-      ? `Olá, ${(user.name || "").split(" ")[0] || "revendedor"}`
-      : cur.label;
+  const centerAllowed = id => items.some(item => item.id === id || (id.startsWith("rede/") && item.id === "rede"));
+  const title = cur.id === "inicio" ? `Olá, ${(user.name || "").split(" ")[0] || "revendedor"}` : cur.label;
   const badge = { clientes: summary?.overdue, notificacoes: notificationCount };
   const renderMenuGroup = (g) => {
-    const list = g.ids
-      .map((id) => items.find((n) => n.id === id))
-      .filter(Boolean);
+    const list = g.ids.map(id => items.find(n => n.id === id)).filter(Boolean);
     if (!list.length) return null;
-    return (
-      <div className="nav-group" key={g.label || "top"}>
-        {g.label && <div className="nav-heading">{g.label}</div>}
-        {list.map((n) => (
-          <button
-            type="button"
-            key={n.id}
-            className={`nav ${n.id === route ? "active" : ""}`}
-            aria-current={n.id === route ? "page" : undefined}
-            onClick={() => go(n.id)}
-          >
-            <Icon name={n.icon} />
-            <span>{n.label}</span>
-            {showBadge && badge[n.id] > 0 && (
-              <b className="count">{badge[n.id]}</b>
-            )}
-          </button>
-        ))}
-      </div>
-    );
+    return <div className="nav-group" key={g.label || 'top'}>
+      {g.label && <div className="nav-heading">{g.label}</div>}
+      {list.map(n => <button type="button" key={n.id}
+        className={`nav ${n.id === route ? 'active' : ''}`}
+        aria-current={n.id === route ? 'page' : undefined}
+        onClick={() => go(n.id)}>
+        <Icon name={n.icon}/><span>{n.label}</span>
+        {showBadge && badge[n.id] > 0 && <b className="count">{badge[n.id]}</b>}
+      </button>)}
+    </div>;
   };
   // A rede comercial possui sua própria navegação e ocupa a tela inteira.
-  const networkRoute =
-    !blocked && isReseller && (route === "rede" || route.startsWith("rede/"));
-  if (networkRoute)
-    return (
-      <Network
-        go={go}
-        user={user}
-        section={
-          route.startsWith("rede/") ? route.slice(5).split("/")[0] : "resumo"
-        }
-      />
-    );
+  const networkRoute = !blocked && isReseller && (route === "rede" || route.startsWith("rede/"));
+  if (networkRoute) return <Network go={go} user={user} section={route.startsWith("rede/") ? route.slice(5).split("/")[0] : "resumo"} />;
   // Mesmas funções do menu lateral, em cartões na tela inicial (o próprio Início fica de fora).
-  const homeGroups = GROUPS.map((g) => ({
+  const homeGroups = GROUPS.map(g => ({
     label: g.label || "Geral",
-    items: g.ids
-      .filter((id) => id !== "inicio")
-      .map((id) => items.find((n) => n.id === id))
-      .filter(Boolean)
-      .map((n) => ({
-        id: n.id,
-        label: n.label,
-        icon: <Icon name={n.icon} size={16} />,
-        badge: showBadge ? badge[n.id] : 0,
-      })),
+    items: g.ids.filter(id => id !== "inicio").map(id => items.find(n => n.id === id)).filter(Boolean)
+      .map(n => ({ id: n.id, label: n.label, icon: <Icon name={n.icon} size={16}/>, badge: showBadge ? badge[n.id] : 0 })),
   }));
   return (
     <div className="layout">
       <aside className={`sidebar ${open ? "open" : ""}`}>
-        <div className="brand">
-          <span className="brand-icon">
-            <Mark size={38} />
-          </span>
-          <div>
-            <strong>
-              <PlatformBrand />
-            </strong>
-            <small>PAINEL DA REVENDA</small>
-          </div>
-          <button
-            className="icon sidebar-close"
-            type="button"
-            aria-label="Fechar menu"
-            onClick={() => setOpen(false)}
-          >
-            <Icon name="x" size={20} />
-          </button>
+        <div className="brand"><span className="brand-icon"><Mark size={38} /></span><div><strong><PlatformBrand/></strong><small>PAINEL DA REVENDA</small></div>
+          <button className="icon sidebar-close" type="button" aria-label="Fechar menu" onClick={() => setOpen(false)}><Icon name="x" size={20}/></button>
         </div>
-
-        <div className="sidebar-context">
-          <span className="sidebar-context-dot" /> <span>Área de trabalho</span>
-          <span className="sidebar-context-mark">Revenda</span>
-        </div>
+        
+        <div className="sidebar-context"><span className="sidebar-context-dot" /> <span>Área de trabalho</span><span className="sidebar-context-mark">Revenda</span></div>
         <nav aria-label="Principal">
-          {blocked ? (
-            <div className="nav-group" aria-label="Conta com acesso restrito">
-              {items.map((n) => (
-                <button
-                  type="button"
-                  className={`nav ${route === n.id ? "active" : ""}`}
-                  key={n.id}
-                  onClick={() => go(n.id)}
-                >
-                  <Icon name={n.icon} />
-                  <span>{n.label}</span>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <>{GROUPS.map(renderMenuGroup)}</>
-          )}
+          {blocked ? <div className="nav-group" aria-label="Conta com acesso restrito">
+            {items.map(n => <button type="button" className={`nav ${route === n.id ? 'active' : ''}`} key={n.id} onClick={() => go(n.id)}><Icon name={n.icon}/><span>{n.label}</span></button>)}
+          </div> : <>
+            {GROUPS.map(renderMenuGroup)}
+          </>}
         </nav>
         <div className="sidebar-foot">
-          <span className="sidebar-foot-icon">
-            <Icon name="shield" size={16} />
-          </span>
-          <span>
-            <strong>Ambiente protegido</strong>
-            <small>Delta TV · Portal comercial</small>
-          </span>
+          <span className="sidebar-foot-icon"><Icon name="shield" size={16}/></span>
+          <span><strong>Ambiente protegido</strong><small>Delta TV · Portal comercial</small></span>
         </div>
       </aside>
-      {open && (
-        <button
-          type="button"
-          className="scrim"
-          aria-label="Fechar navegação"
-          onClick={() => setOpen(false)}
-        />
-      )}
+      {open && <button type="button" className="scrim" aria-label="Fechar navegação" onClick={() => setOpen(false)} />}
       <div className="main">
         <div className="topbar">
-          <button
-            type="button"
-            className="icon menu-btn"
-            aria-label="Abrir menu"
-            aria-expanded={open}
-            onClick={() => setOpen(true)}
-          >
-            <Icon name="menu" size={22} />
-          </button>
-          <div className="topbar-context">
-            <span className="topbar-eyebrow">PAINEL DA REVENDA</span>
-            <strong className="topbar-title">{cur.label}</strong>
-          </div>
+          <button type="button" className="icon menu-btn" aria-label="Abrir menu" aria-expanded={open} onClick={() => setOpen(true)}><Icon name="menu" size={22} /></button>
+          <div className="topbar-context"><span className="topbar-eyebrow">PAINEL DA REVENDA</span><strong className="topbar-title">{cur.label}</strong></div>
           <div className="topbar-tools">
-            {user.portalAdmin && (
-              <AdminPortalAccounts
-                api={api}
-                acceptSession={acceptSession}
-                getAuth={getAuth}
-                portalName="o Painel da Revenda"
-              />
-            )}
-            {!blocked && (
-              <button
-                className="btn primary sm"
-                type="button"
-                onClick={() => {
-                  go("ativar-tv");
-                }}
-              >
-                Ativar TV
-              </button>
-            )}
-
-            <button
-              type="button"
-              className="btn sm"
-              data-help-target="context-help"
-              onClick={() =>
-                window.dispatchEvent(
-                  new CustomEvent("deltatv-help-context", {
-                    detail: { screen: cur.id },
-                  }),
-                )
-              }
-            >
-              ? Ajuda
-            </button>
-            {!blocked && (
-              <button
-                type="button"
-                className="topbar-notify"
-                aria-label={
-                  notificationCount > 0
-                    ? `${notificationCount} notificações não lidas`
-                    : "Abrir notificações"
-                }
-                title="Notificações"
-                onClick={() => go("notificacoes")}
-              >
-                <Icon name="bell" size={19} />
-                {showBadge && notificationCount > 0 && (
-                  <span className="topbar-notify-count">
-                    {notificationCount > 99 ? "99+" : notificationCount}
-                  </span>
-                )}
-              </button>
-            )}
-            <UserMenu
-              user={user}
-              name={user.name || me?.name}
-              avatar={profileDetails?.profile?.avatarData}
-              onAccount={() => go("conta")}
-            />
+            {user.portalAdmin && <AdminPortalAccounts api={api} acceptSession={acceptSession} getAuth={getAuth} portalName="o Painel da Revenda" />}
+            {!blocked && <button className="btn primary sm" type="button" onClick={()=>{go("ativar-tv");}}>Ativar TV</button>}
+            
+            <button type="button" className="btn sm" data-help-target="context-help" onClick={() => window.dispatchEvent(new CustomEvent("deltatv-help-context", { detail: { screen: cur.id } }))}>? Ajuda</button>
+            {!blocked && <button type="button" className="topbar-notify" aria-label={notificationCount > 0 ? `${notificationCount} notificações não lidas` : "Abrir notificações"} title="Notificações" onClick={() => go("notificacoes")}>
+              <Icon name="bell" size={19}/>{showBadge && notificationCount > 0 && <span className="topbar-notify-count">{notificationCount > 99 ? "99+" : notificationCount}</span>}
+            </button>}
+            <UserMenu user={user} name={user.name || me?.name} avatar={profileDetails?.profile?.avatarData} onAccount={() => go("conta")} />
           </div>
         </div>
-        {!blocked && (
-          <ServerHealthAlert onOpenMonitor={() => go("monitoramento")} />
-        )}
-        {showUnread &&
-          notificationCount > 0 &&
-          cur.id !== "notificacoes" &&
-          !blocked && (
-            <div role="status" className="unread-banner">
-              <span className="unread-banner-symbol">
-                <Icon name="bell" size={19} />
-              </span>
-              <div className="unread-banner-copy">
-                <strong>
-                  {notificationCount === 1
-                    ? "Você tem 1 mensagem não lida"
-                    : `Você tem ${notificationCount} mensagens não lidas`}
-                </strong>
-                <span>Há comunicados da Delta TV aguardando sua leitura.</span>
-              </div>
-              <button
-                type="button"
-                className="btn primary"
-                onClick={() => go("notificacoes")}
-              >
-                Ler mensagens <Icon name="arrow-right" size={15} />
-              </button>
-            </div>
-          )}
-        <main className="content">
-          <Breadcrumb
-            panel="revenda"
-            current={cur.label}
-            onHome={() => go("inicio")}
-          />
-          <TaskFinder
-            tasks={TASKS.filter((task) => centerAllowed(task.route))}
-            onNavigate={go}
-          />
+        {!blocked && <ServerHealthAlert onOpenMonitor={() => go("monitoramento")} />}
+        {showUnread && notificationCount > 0 && cur.id !== "notificacoes" && !blocked && <div role="status" className="unread-banner">
+          <span className="unread-banner-symbol"><Icon name="bell" size={19}/></span>
+          <div className="unread-banner-copy"><strong>{notificationCount === 1 ? "Você tem 1 mensagem não lida" : `Você tem ${notificationCount} mensagens não lidas`}</strong><span>Há comunicados da Delta TV aguardando sua leitura.</span></div>
+          <button type="button" className="btn primary" onClick={() => go("notificacoes")}>Ler mensagens <Icon name="arrow-right" size={15}/></button>
+        </div>}
+        <main className="content"><Breadcrumb panel="revenda" current={cur.label} onHome={()=>go("inicio")}/>
+          <TaskFinder tasks={TASKS.filter(task=>centerAllowed(task.route))} onNavigate={go} />
           <header className="page-title">
-            <div className="page-title-copy">
-              <span className="page-eyebrow">
-                DELTA TV <span>/</span> {cur.label.toUpperCase()}
-              </span>
-              <h1>{title}</h1>
-              {cur.desc && <p className="muted">{cur.desc}</p>}
-            </div>
+            <div className="page-title-copy"><span className="page-eyebrow">DELTA TV <span>/</span> {cur.label.toUpperCase()}</span><h1>{title}</h1>{cur.desc && <p className="muted">{cur.desc}</p>}</div>
           </header>
-          {simpleMode && cur.id !== "inicio" && (
-            <EasyPageGuide
-              role="reseller"
-              page={cur.id}
-              onBack={() => go("inicio")}
-            />
-          )}
-          <HelpExperience
-            screen={cur.id}
-            portal="reseller"
-            userId={user.id}
-            onNavigate={go}
-          />
+          {simpleMode && cur.id !== "inicio" && <EasyPageGuide role="reseller" page={cur.id} onBack={() => go("inicio")} />}
+          <HelpExperience screen={cur.id} portal="reseller" userId={user.id} onNavigate={go}/>
           {Page && <Page go={go} user={user} menu={homeGroups} />}
         </main>
       </div>
@@ -713,9 +241,5 @@ function Layout({ user }) {
 }
 
 export default function Shell({ user }) {
-  return (
-    <PortalProvider>
-      <Layout user={user} />
-    </PortalProvider>
-  );
+  return <PortalProvider><Layout user={user} /></PortalProvider>;
 }
