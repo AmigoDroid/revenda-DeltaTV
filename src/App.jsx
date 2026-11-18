@@ -1,8 +1,7 @@
 import { panelAllows } from "../shared/permissions.js";
 import { connectRealtime } from "./realtime.js";
 import { useEffect, useState } from "react";
-import { getAuth, login, logout, api, acceptSession } from "./api.js";
-import AdminPortalAccounts from "@deltatv/ui/AdminPortalAccounts";
+import { getAuth, login, logout } from "./api.js";
 import { UiProvider, Field, useAction } from "./ui.jsx";
 import Shell from "./Shell.jsx";
 import { Mark, Bars } from "./icons.jsx";
@@ -63,7 +62,13 @@ export default function App() {
   return (
     <UiProvider>
       {auth?.user?.role === 'portal_select' && auth?.user?.portalAdmin
-        ? <AdminPortalAccounts api={api} acceptSession={acceptSession} getAuth={getAuth} logout={logout} portalName="o Painel da Revenda" selectionOnly />
+        ? <main role="alert" style={{maxWidth:620,margin:'8vh auto',padding:28}}>
+            <h1>Revenda original não vinculada</h1>
+            <p>Este login não está associado à revenda original. Nenhuma conta de teste será selecionada automaticamente.</p>
+            <p>Peça ao Superadmin para corrigir a <strong>Conta operacional vinculada</strong> e depois entre novamente.</p>
+            <p><a href="https://admin.deltatv.com.br">Abrir Painel Admin</a></p>
+            <button type="button" onClick={()=>void logout()}>Sair para entrar novamente</button>
+          </main>
         : user ? <Shell key={`${user.id}:${user.partnerId}`} user={user} /> : view === "register"
         ? <Register onBack={() => show("login")} />
         : view === "forgot"
