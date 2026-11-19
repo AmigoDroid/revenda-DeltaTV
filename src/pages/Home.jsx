@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../api.js";
 import EasyStart from "@deltatv/ui/EasyStart";
+import AppInstallSpotlight from "@deltatv/ui/AppInstallSpotlight";
 import AllFunctions from "../AllFunctions.jsx";
 import { Icon } from "../icons.jsx";
 import { usePortal } from "../portal.jsx";
@@ -79,6 +80,7 @@ export default function Home({ go, menu }) {
 
   return (
     <>
+      <AppInstallSpotlight onOpen={() => go("aplicativos")} />
       <section className="delta-overview" aria-label="Resumo da operação">
         <div className="delta-overview-data">
           <span><Icon name={isReseller ? "ticket" : "tv"} />{isReseller ? "Licenças em estoque" : "Dispositivos cadastrados"}</span>
