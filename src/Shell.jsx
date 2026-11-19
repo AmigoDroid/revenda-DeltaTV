@@ -49,7 +49,7 @@ const NAV = [
   { id: "codigos", label: "Códigos", icon: "key", page: Codes, desc: "Códigos que o cliente digita na TV para ativar." },
   { id: "playerweb", label: "Player Web", icon: "tv", page: WebAccess, reseller: true, desc: "Códigos (2 letras + 6 números) para o cliente assistir no navegador, com licença e entrega próprias." },
   { id: "white-label", label: "Meus aplicativos", icon: "download", page: WhiteLabelApps, desc: "Aplicativos contratados, servidores e limites de ativação." },
-  { id: "aplicativos", label: "Downloads e links", icon: "download", page: Downloads, reseller: true, desc: "Aplicativos para baixar e links úteis: copie o link ou o código do Downloader para passar ao seu cliente." },
+  { id: "aplicativos", label: "Aplicativos", icon: "download", page: Downloads, reseller: true, desc: "Aprenda a instalar DeltaTV no Android, TV Box e Roku, e compartilhe os links e códigos cadastrados." },
   { id: "servidores", label: "Fontes de conteúdo", icon: "server", page: Servers, desc: "Links e qualidade HTTP na mesma área." },
   { id: "monitoramento", label: "Monitoramento", icon: "server", page: ServerMonitor, desc: "Acompanhe a disponibilidade e o tempo de resposta dos seus servidores." },
   { id: "notificacoes", label: "Notificações", icon: "bell", page: Notifications, desc: "Avisos e comunicados da Delta TV." },

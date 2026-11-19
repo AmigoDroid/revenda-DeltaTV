@@ -1,3 +1,5 @@
+import AppInstallGuide from "@deltatv/ui/AppInstallGuide";
+import { api } from "../api.js";
 import { useEffect, useState } from "react";
 import { Icon } from "../icons.jsx";
 import { Empty, Pager, useDebounced, useList, useUi } from "../ui.jsx";
@@ -44,12 +46,16 @@ function DownloadCard({ item }) {
   </article>;
 }
 
+const loadPublishedDownloads = ({ page, pageSize }) => api("/app-installation/downloads", { query: { page, pageSize } });
+
 export default function Downloads() {
   const [q, setQ] = useState("");
   const dq = useDebounced(q);
   const list = useList("/partner/app-downloads", { q: "", kind: "" });
   useEffect(() => { list.filter({ q: dq }); }, [dq]);
   return <>
+    <AppInstallGuide loadDownloads={loadPublishedDownloads}/>
+    <details className="delta-existing-downloads"><summary>Catálogo anterior: filtros e links cadastrados</summary>
     <div className="delta-filterbar">
       <input type="search" aria-label="Buscar por nome ou versão" placeholder="Buscar por nome ou versão" value={q} onChange={e => setQ(e.target.value)} />
       <select aria-label="Tipo de download" value={list.params.kind} onChange={e => list.filter({ kind: e.target.value })}><option value="">Todos os tipos</option><option value="app">Aplicativos</option><option value="link">Links</option></select>
@@ -57,5 +63,6 @@ export default function Downloads() {
     <div className="delta-downloads">{list.data.map(item => <DownloadCard key={item.id} item={item}/>)}</div>
     <Empty loading={list.loading} error={list.error} count={list.data.length}/>
     <Pager meta={list.meta} onPage={list.setPage}/>
+    </details>
   </>;
 }
