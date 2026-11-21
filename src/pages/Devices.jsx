@@ -1,3 +1,4 @@
+import { DeviceDns } from "@deltatv/ui/EmergencyDns";
 import { useDeviceBulkActions } from "../../shared/useDeviceBulkActions.jsx";
 import { useBulkRemoval } from "../../shared/useBulkRemoval.jsx";
 import { Modal } from "../ui.jsx";
@@ -14,6 +15,7 @@ const REFRESH_MS = 60000; // fallback quando o WebSocket não informa mudanças;
 
 export default function Devices({ go }) {
   const { isReseller } = usePortal();
+  const [dnsMac,setDnsMac]=useState(null);
   const [webFor, setWebFor] = useState(null); // dispositivo para o qual se gera um acesso do Player Web
   const { confirm } = useUi();
   const run = useAction();
@@ -86,6 +88,7 @@ export default function Devices({ go }) {
                 <RowMenu items={[
                   { label: "Listas", hidden: !(isReseller && a.mac), onClick: () => setViewMac(a.mac) },
                   { label: "Gerar acesso Player Web", hidden: !(isReseller && a.mac && a.status === "active" && a.platform !== "web"), onClick: () => setWebFor(a) },
+                  { label: "Trocar DNS desta TV", hidden: a.status !== "active", onClick: () => setDnsMac(a.mac) },
                   { label: "Transferir MAC", hidden: !(a.status === "active" && live), onClick: () => setTransfer(a) },
                   { label: "Bloquear", hidden: a.status !== "active", onClick: () => change(a, "block", { title: "Bloquear dispositivo", message: a.mac, reason: "required", danger: true }) },
                   { label: "Desbloquear", hidden: a.status !== "blocked", onClick: () => change(a, "unblock", { title: "Desbloquear", message: a.mac }) },
@@ -106,6 +109,7 @@ export default function Devices({ go }) {
               isReseller && <button className="btn primary" onClick={() => go("ativar-tv")}>Ativar primeira TV</button>}
           </div>}<Pager meta={devices.meta} onPage={devices.setPage} />
       </section>
+      {dnsMac && <Modal title={`DNS da TV ${dnsMac}`} onClose={()=>setDnsMac(null)} wide><DeviceDns api={api} base="/partner/emergency-dns" initialMac={dnsMac} onBack={()=>setDnsMac(null)}/></Modal>}
       {webFor && <NewWebAccess initial={{ mac: webFor.mac }} onClose={() => setWebFor(null)} />}
       {viewMac && <DeviceListsModal mac={viewMac} onClose={() => setViewMac(null)} />}
       {transfer && <TransferLicense activation={transfer} onClose={() => setTransfer(null)} onDone={() => { setTransfer(null); devices.reload(); window.dispatchEvent(new Event("stock-changed")); }} />}
