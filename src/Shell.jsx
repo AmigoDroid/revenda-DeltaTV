@@ -1,3 +1,4 @@
+import EmergencyDns from "@deltatv/ui/EmergencyDns";
 import {Breadcrumb,PlatformBrand} from "../shared/PanelExperience.jsx";
 import TvMessages from "./TvMessages.jsx";
 import TaskFinder from "@deltatv/ui/TaskFinder";
@@ -34,6 +35,7 @@ import ServerHealthAlert from "./ServerHealthAlert.jsx";
 import HelpExperience from "./HelpExperience.jsx";
 
 // Cada item vira uma página. `reseller`: só aparece para quem revende licenças.
+const EmergencyDnsPage = () => <EmergencyDns api={api} base="/partner/emergency-dns"/>;
 const NAV = [
   {id:"tvmessages",label:"Mensagens para TVs",icon:"bell",page:TvMessages,desc:"Envie comunicados aos aparelhos dos seus clientes."},
   { id: "inicio", label: "Início", icon: "home", page: Home, desc: "O que precisa da sua atenção hoje." },
@@ -50,6 +52,7 @@ const NAV = [
   { id: "playerweb", label: "Player Web", icon: "tv", page: WebAccess, reseller: true, desc: "Códigos (2 letras + 6 números) para o cliente assistir no navegador, com licença e entrega próprias." },
   { id: "white-label", label: "Meus aplicativos", icon: "download", page: WhiteLabelApps, desc: "Aplicativos contratados, servidores e limites de ativação." },
   { id: "aplicativos", label: "Aplicativos", icon: "download", page: Downloads, reseller: true, desc: "Aprenda a instalar DeltaTV no Android, TV Box e Roku, e compartilhe os links e códigos cadastrados." },
+  { id: "dns-emergencia", label: "Troca emergencial de DNS", icon: "server", page: EmergencyDnsPage, desc: "Prioridade temporária de DNS nos códigos selecionados e avisos imediatos às TVs." },
   { id: "servidores", label: "Fontes de conteúdo", icon: "server", page: Servers, desc: "Links e qualidade HTTP na mesma área." },
   { id: "monitoramento", label: "Monitoramento", icon: "server", page: ServerMonitor, desc: "Acompanhe a disponibilidade e o tempo de resposta dos seus servidores." },
   { id: "notificacoes", label: "Notificações", icon: "bell", page: Notifications, desc: "Avisos e comunicados da Delta TV." },
@@ -66,7 +69,7 @@ const GROUPS = [
   {label:'Acesso rápido',ids:['ativar-tv','clientes','dispositivos','rede']},
   {label:'Atendimento',ids:['suporte','tvmessages']},
   {label:'Licenças e financeiro',ids:['vender-licencas','estoque','creditos','licencas','financeiro','pix-master']},
-  {label:'Aplicativos e servidores',ids:['codigos','playerweb','servidores','monitoramento','white-label','aplicativos']},
+  {label:'Aplicativos e servidores',ids:['codigos','playerweb','servidores','dns-emergencia','monitoramento','white-label','aplicativos']},
   {label:'Conta e suporte',ids:['conta','notificacoes','loginhistory','ajuda']},
 ];
 const ACCOUNT = [
