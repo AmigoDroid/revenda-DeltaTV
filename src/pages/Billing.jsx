@@ -1,4 +1,3 @@
-import NetworkCharges from "./NetworkCharges.jsx";
 import { usePortal } from "../portal.jsx";
 import { PayInvoiceButton, PixHistory } from "./Pix.jsx";
 import { Badge, Empty, Pager, Table, fmtDate, fmtMoney } from "../ui.jsx";
@@ -13,7 +12,6 @@ export default function Billing() {
         <Empty loading={invoices.loading} error={invoices.error} count={invoices.data.length} /><Pager meta={invoices.meta} onPage={invoices.setPage} />
       </section>
       <section><PixHistory refreshKey={pixTick} /></section>
-      <NetworkCharges />
     </>
   );
 }
@@ -32,7 +30,7 @@ export function Blocked() {
             : <><p>Seu acesso está {me.effectiveStatus === "expired" ? "com a vigência encerrada" : "suspenso ou bloqueado"}{me.statusReason ? `: ${me.statusReason}` : "."}</p><p className="muted">Fale com a plataforma para regularizar{me.effectiveStatus === "suspended" ? " ou pague a mensalidade em aberto abaixo (a liberação é automática após a confirmação do Pix)" : ""}.</p></>}
         </div>
       </div>
-      {["suspended", "expired"].includes(me.effectiveStatus) && !me.pendingApproval && <Billing />}
+      {me.effectiveStatus === "suspended" && !me.pendingApproval && <Billing />}
     </>
   );
 }
