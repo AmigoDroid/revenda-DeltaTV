@@ -266,3 +266,11 @@ input[type=checkbox],input[type=radio]{accent-color:#6195ff}
 button{min-height:36px}button:focus-visible{outline:3px solid #96aaff;outline-offset:2px}
 @media(max-width:700px){.table-wrap button,.rowmenu button{min-height:44px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+.login.card { width: min(440px, calc(100% - 24px)); padding: clamp(18px, 4vw, 32px); }
+.modal header h3 { min-width: 0; overflow-wrap: anywhere; }
+.modal-body :where(fieldset, label, input, select, textarea) { min-width: 0; max-width: 100%; }
+@media (max-height: 480px) {
+  .login.card { margin-block: 12px; }
+  .modal header { padding-block: 8px; }
+}
